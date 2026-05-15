@@ -3,7 +3,7 @@ import pkg from '../package.json'
 
 export default defineManifest({
   manifest_version: 3,
-  name: 'Recap',
+  name: 'Tazly',
   version: pkg.version,
   description: 'Board progettuale leggera nella nuova tab',
   chrome_url_overrides: {

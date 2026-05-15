@@ -1,3 +1,5 @@
+import type { TagColor } from '@/lib/colors'
+
 export type TagId = string
 export type CategoryId = string
 export type ProjectId = string
@@ -6,10 +8,8 @@ export type TaskId = string
 export interface Tag {
   id: TagId
   name: string
-  color: string
+  color: TagColor
   description?: string
-  order: number
-  active: boolean
 }
 
 export interface Task {
@@ -33,6 +33,7 @@ export interface Project {
   name: string
   categories: Category[]
   tasks: Task[]
+  notes: string
 }
 
 export interface Board {

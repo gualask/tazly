@@ -1,4 +1,4 @@
-# Recap app
+# Tazly app
 
 ## Idea
 

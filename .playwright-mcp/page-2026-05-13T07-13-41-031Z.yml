@@ -1,0 +1,22 @@
+- main [ref=e3]:
+  - generic [ref=e5]:
+    - img [ref=e6]
+    - heading "Tazly" [level=1] [ref=e9]
+    - navigation [ref=e10]:
+      - button "Board" [ref=e11]:
+        - img
+        - text: Board
+      - button "Tag" [ref=e12]:
+        - img
+        - text: Tag
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - img [ref=e15]
+      - generic [ref=e18]: Nessun tag definito. Crea i tag che userai per classificare i task.
+      - button "Gestione tag" [ref=e19]
+    - generic [ref=e20]:
+      - paragraph [ref=e21]: Nessun progetto
+      - paragraph [ref=e22]: Crea il tuo primo progetto per iniziare a organizzare i task.
+      - button "Crea progetto" [ref=e24]:
+        - img
+        - text: Crea progetto
