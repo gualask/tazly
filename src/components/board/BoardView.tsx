@@ -1,12 +1,10 @@
-import { IconEye, IconEyeOff } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Notepad } from '@/components/board/Notepad'
 import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
-import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { CategoryId, ProjectId, Task, TaskId } from '@/types/domain'
+import type { CategoryId, Task, TaskId } from '@/types/domain'
 
 function isEditableTarget(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false
@@ -20,7 +18,6 @@ export function BoardView() {
   const tags = useBoardStore((s) => s.board.tags)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
   const activeFilters = useBoardStore((s) => s.activeFilters)
-  const setFocusProject = useBoardStore((s) => s.setFocusProject)
   const toggleTaskDone = useBoardStore((s) => s.toggleTaskDone)
   const expandCategory = useBoardStore((s) => s.expandCategory)
   const toggleCategoryCollapsed = useBoardStore((s) => s.toggleCategoryCollapsed)
@@ -34,7 +31,6 @@ export function BoardView() {
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
 
-  const [showDone, setShowDone] = useState(false)
   const [notepadOpenSession, setNotepadOpenSession] = useState(false)
 
   useEffect(() => {
@@ -51,7 +47,7 @@ export function BoardView() {
 
   const taskFilter = useCallback(
     (t: Task) => {
-      if (!showDone && t.done) return false
+      if (t.done) return false
       if (activeFilters.tagIds.length > 0) {
         const hasAnyTag = t.tagIds.some((id) => activeFilters.tagIds.includes(id))
         if (!hasAnyTag) return false
@@ -61,7 +57,7 @@ export function BoardView() {
       }
       return true
     },
-    [showDone, activeFilters],
+    [activeFilters],
   )
 
   const visibleTaskIds = useMemo(() => {
@@ -289,7 +285,7 @@ export function BoardView() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 pt-4 pb-24">
-      {(noTagsHint || noProjects || projects.length > 0) && (
+      {(noTagsHint || noProjects) && (
         <div className="flex items-center gap-3 text-muted-foreground text-xs">
           {noTagsHint && projects.length > 0 && (
             <span>
@@ -307,29 +303,11 @@ export function BoardView() {
               <code className="rounded bg-muted px-1 py-0.5 font-mono">landing</code>
             </span>
           )}
-          {projects.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowDone((v) => !v)}
-              className={cn(
-                'ml-auto inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 transition',
-                showDone ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
-              )}
-              title={showDone ? 'Nascondi task completati' : 'Mostra task completati'}
-            >
-              {showDone ? <IconEye className="size-3.5" /> : <IconEyeOff className="size-3.5" />}
-              {showDone ? 'nascondi fatti' : 'mostra fatti'}
-            </button>
-          )}
         </div>
       )}
 
       {focusProject ? (
-        <FocusLayout
-          projects={projects}
-          focusedId={focusProject.id}
-          onFocus={(id) => setFocusProject(id)}
-        >
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4 lg:flex-row">
             <div className="min-w-0 flex-1">
               <ProjectCard
@@ -353,7 +331,7 @@ export function BoardView() {
               <NotepadTab />
             )}
           </div>
-        </FocusLayout>
+        </div>
       ) : (
         <BoardGrid count={projects.length}>
           {projects.map((p) => (
@@ -376,44 +354,3 @@ function BoardGrid({ count, children }: { count: number; children: React.ReactNo
   return <div className={`grid gap-4 ${cols}`}>{children}</div>
 }
 
-function FocusLayout({
-  projects,
-  focusedId,
-  onFocus,
-  children,
-}: {
-  projects: { id: ProjectId; name: string; tasks: Task[] }[]
-  focusedId: ProjectId
-  onFocus: (id: ProjectId) => void
-  children: React.ReactNode
-}) {
-  if (projects.length <= 1) return <>{children}</>
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-1">
-        {projects.map((p) => {
-          const isActive = p.id === focusedId
-          const openCount = p.tasks.filter((t) => !t.done).length
-          return (
-            <button
-              type="button"
-              key={p.id}
-              onClick={() => onFocus(p.id)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs transition',
-                isActive
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-muted',
-              )}
-            >
-              <span>{p.name}</span>
-              <span className="tabular-nums opacity-60">{openCount}</span>
-            </button>
-          )
-        })}
-      </div>
-      {children}
-    </div>
-  )
-}

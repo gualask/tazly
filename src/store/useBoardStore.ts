@@ -20,6 +20,8 @@ interface BoardState {
   selectedTaskId: TaskId | null
   selectedCategoryId: CategoryId | null
   notepadOpenTick: number
+  viewResetTick: number
+  lastClosedTask: { projectId: ProjectId; taskId: TaskId } | null
 
   setEditingTaskId: (id: TaskId | null) => void
   setEditingCategoryId: (id: CategoryId | null) => void
@@ -32,6 +34,7 @@ interface BoardState {
   toggleFilterTag: (id: TagId) => void
   toggleFilterCategory: (id: CategoryId) => void
   clearFilters: () => void
+  resetView: () => void
   isProjectNameTaken: (name: string) => boolean
 
   addProject: (name: string) => ProjectId | null
@@ -55,6 +58,7 @@ interface BoardState {
     patch: Partial<Pick<Task, 'title' | 'categoryId' | 'tagIds' | 'done'>>,
   ) => void
   toggleTaskDone: (projectId: ProjectId, id: TaskId) => void
+  undoLastClose: () => void
   removeTask: (projectId: ProjectId, id: TaskId) => void
 
   addTag: (input: { name: string; color: TagColor; description?: string }) => void
@@ -96,6 +100,8 @@ export const useBoardStore = create<BoardState>()(
       selectedTaskId: null,
       selectedCategoryId: null,
       notepadOpenTick: 0,
+      viewResetTick: 0,
+      lastClosedTask: null,
 
       setEditingTaskId(id) {
         set({ editingTaskId: id })
@@ -153,6 +159,14 @@ export const useBoardStore = create<BoardState>()(
 
       clearFilters() {
         set({ activeFilters: { tagIds: [], categoryIds: [] } })
+      },
+
+      resetView() {
+        set((s) => ({
+          focusProjectId: null,
+          activeFilters: { tagIds: [], categoryIds: [] },
+          viewResetTick: s.viewResetTick + 1,
+        }))
       },
 
       isProjectNameTaken(name) {
@@ -298,21 +312,60 @@ export const useBoardStore = create<BoardState>()(
       },
 
       updateTask(projectId, id, patch) {
-        set((s) =>
-          mapProject(s, projectId, (p) => ({
+        set((s) => {
+          let closedRef: { projectId: ProjectId; taskId: TaskId } | null = null
+          const next = mapProject(s, projectId, (p) => ({
             ...p,
-            tasks: p.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
-          })),
-        )
+            tasks: p.tasks.map((t) => {
+              if (t.id !== id) return t
+              const wasDone = t.done
+              const merged: Task = { ...t, ...patch }
+              if ('done' in patch) {
+                if (merged.done && !wasDone) {
+                  merged.completedAt = Date.now()
+                  closedRef = { projectId, taskId: id }
+                } else if (!merged.done && wasDone) {
+                  merged.completedAt = undefined
+                }
+              }
+              return merged
+            }),
+          }))
+          return { ...next, lastClosedTask: closedRef ?? s.lastClosedTask }
+        })
       },
 
       toggleTaskDone(projectId, id) {
-        set((s) =>
-          mapProject(s, projectId, (p) => ({
+        set((s) => {
+          let closedRef: { projectId: ProjectId; taskId: TaskId } | null = null
+          const next = mapProject(s, projectId, (p) => ({
             ...p,
-            tasks: p.tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
+            tasks: p.tasks.map((t) => {
+              if (t.id !== id) return t
+              const nextDone = !t.done
+              if (nextDone) {
+                closedRef = { projectId, taskId: id }
+                return { ...t, done: true, completedAt: Date.now() }
+              }
+              return { ...t, done: false, completedAt: undefined }
+            }),
+          }))
+          return { ...next, lastClosedTask: closedRef ?? s.lastClosedTask }
+        })
+      },
+
+      undoLastClose() {
+        const last = get().lastClosedTask
+        if (!last) return
+        set((s) => ({
+          ...mapProject(s, last.projectId, (p) => ({
+            ...p,
+            tasks: p.tasks.map((t) =>
+              t.id === last.taskId ? { ...t, done: false, completedAt: undefined } : t,
+            ),
           })),
-        )
+          lastClosedTask: null,
+        }))
       },
 
       removeTask(projectId, id) {
@@ -384,7 +437,12 @@ export const useBoardStore = create<BoardState>()(
       },
 
       resetBoard() {
-        set({ board: emptyBoard, focusProjectId: null, activeFilters: { tagIds: [], categoryIds: [] } })
+        set({
+          board: emptyBoard,
+          focusProjectId: null,
+          activeFilters: { tagIds: [], categoryIds: [] },
+          lastClosedTask: null,
+        })
       },
     }),
 

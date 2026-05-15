@@ -17,6 +17,7 @@ type Step = 'category' | 'title' | 'tags'
 interface QuickAddBarProps {
   project: Project
   allTags: Tag[]
+  active?: boolean
   onTaskCreated?: (categoryId: CategoryId, taskId: string) => void
 }
 
@@ -28,7 +29,7 @@ interface CategorySuggestion {
 
 const RAPID_REGEX = /^([^:]+):\s*(.+?)(?:\s+(#\S+(?:\s+#\S+)*))?$/
 
-export function QuickAddBar({ project, allTags, onTaskCreated }: QuickAddBarProps) {
+export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAddBarProps) {
   const addCategory = useBoardStore((s) => s.addCategory)
   const addTask = useBoardStore((s) => s.addTask)
   const projectsLatest = useBoardStore((s) => s.board.projects)
@@ -83,10 +84,11 @@ export function QuickAddBar({ project, allTags, onTaskCreated }: QuickAddBarProp
   }, [step, categoryDraft, tagDraft])
 
   useEffect(() => {
+    if (!active) return
     if (step === 'category') categoryRef.current?.focus()
     if (step === 'title') titleRef.current?.focus()
     if (step === 'tags') tagRef.current?.focus()
-  }, [step])
+  }, [step, active])
 
   function reset(keepCategory: boolean) {
     if (!keepCategory) {
@@ -235,9 +237,15 @@ export function QuickAddBar({ project, allTags, onTaskCreated }: QuickAddBarProp
       e.preventDefault()
       setLockedTitle(titleDraft.trim())
       setStep('tags')
-    } else if ((e.key === 'Tab' && e.shiftKey) || (e.key === 'Backspace' && !titleDraft)) {
+    } else if (e.key === 'Tab' && e.shiftKey) {
       e.preventDefault()
       setCategoryDraft(lockedCategoryName ?? '')
+      setLockedCategoryId(null)
+      setLockedCategoryName(null)
+      setStep('category')
+    } else if (e.key === 'Backspace' && !titleDraft) {
+      e.preventDefault()
+      setCategoryDraft('')
       setLockedCategoryId(null)
       setLockedCategoryName(null)
       setStep('category')

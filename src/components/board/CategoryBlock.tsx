@@ -1,4 +1,10 @@
-import { IconChevronDown, IconChevronRight, IconTrash, IconX } from '@tabler/icons-react'
+import {
+  IconCheck,
+  IconChevronDown,
+  IconChevronRight,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react'
 import { useState } from 'react'
 
 import { TaskRow } from '@/components/board/TaskRow'
@@ -95,10 +101,10 @@ export function CategoryBlock({
               }}
               className="h-7 flex-1"
             />
-            <Button size="icon" variant="ghost" onClick={saveRename}>
-              <IconChevronDown />
+            <Button size="icon" variant="ghost" onClick={saveRename} title="Salva (Invio)">
+              <IconCheck />
             </Button>
-            <Button size="icon" variant="ghost" onClick={cancelRename}>
+            <Button size="icon" variant="ghost" onClick={cancelRename} title="Annulla (Esc)">
               <IconX />
             </Button>
           </>

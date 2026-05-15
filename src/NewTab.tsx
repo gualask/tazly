@@ -1,28 +1,41 @@
-import { IconRefresh, IconTag } from '@tabler/icons-react'
+import { IconHistory, IconRefresh, IconTag } from '@tabler/icons-react'
 import { useState } from 'react'
 
 import { BoardView } from '@/components/board/BoardView'
 import { CommandBar } from '@/components/board/CommandBar'
+import { LogView } from '@/components/log/LogView'
 import { TagsView } from '@/components/tags/TagsView'
 import { Button } from '@/components/ui/button'
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 
-type View = 'board' | 'tags'
+type View = 'board' | 'tags' | 'log'
 
 export function NewTab() {
   const [view, setView] = useState<View>('board')
   const [showHelp, setShowHelp] = useState(false)
   const resetBoard = useBoardStore((s) => s.resetBoard)
 
-  useGlobalHotkeys({ onToggleHelp: () => setShowHelp((v) => !v) })
+  useGlobalHotkeys({
+    onToggleHelp: () => setShowHelp((v) => !v),
+    resetEnabled: view === 'board',
+  })
 
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-20 border-b border-border bg-background">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-6 py-2">
           <div className="flex-1">{view === 'board' && <CommandBar />}</div>
+          <Button
+            size="icon"
+            variant={view === 'log' ? 'secondary' : 'ghost'}
+            onClick={() => setView(view === 'log' ? 'board' : 'log')}
+            title="Storico completati"
+            className="size-7"
+          >
+            <IconHistory />
+          </Button>
           <Button
             size="icon"
             variant={view === 'tags' ? 'secondary' : 'ghost'}
@@ -59,7 +72,9 @@ export function NewTab() {
         </div>
       </header>
 
-      {view === 'board' ? <BoardView /> : <TagsView onClose={() => setView('board')} />}
+      {view === 'board' && <BoardView />}
+      {view === 'tags' && <TagsView onClose={() => setView('board')} />}
+      {view === 'log' && <LogView />}
 
       <Cheatsheet open={showHelp} onClose={() => setShowHelp(false)} />
     </main>

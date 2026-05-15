@@ -133,7 +133,12 @@ export function ProjectCard({
       </div>
 
       <div data-tazly-quickadd-root={isFocusedHere ? '' : undefined}>
-        <QuickAddBar project={project} allTags={allTags} onTaskCreated={handleTaskCreated} />
+        <QuickAddBar
+          project={project}
+          allTags={allTags}
+          active={isFocusedHere}
+          onTaskCreated={handleTaskCreated}
+        />
       </div>
 
       <div className="flex flex-col gap-2">

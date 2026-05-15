@@ -1,4 +1,4 @@
-import { IconTrash, IconX } from '@tabler/icons-react'
+import { IconCheck, IconTrash, IconX } from '@tabler/icons-react'
 import { useState } from 'react'
 
 import { TagBadge } from '@/components/tags/TagBadge'
@@ -80,8 +80,8 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
             autoFocus
             className="flex-1"
           />
-          <Button size="sm" onClick={save}>
-            Salva
+          <Button size="icon" variant="ghost" onClick={save} title="Salva (Invio)">
+            <IconCheck />
           </Button>
           <Button size="icon" variant="ghost" onClick={cancel} title="Annulla (Esc)">
             <IconX />

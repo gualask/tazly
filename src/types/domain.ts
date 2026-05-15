@@ -19,6 +19,7 @@ export interface Task {
   tagIds: TagId[]
   done: boolean
   createdAt: number
+  completedAt?: number
 }
 
 export interface Category {

@@ -1,4 +1,4 @@
-import { IconPencil, IconPlus, IconTrash, IconX } from '@tabler/icons-react'
+import { IconCheck, IconPencil, IconPlus, IconTrash, IconX } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 
 import { EmptyState } from '@/components/common/EmptyState'
@@ -59,11 +59,11 @@ function TagRow({ tag }: { tag: Tag }) {
         />
         <ColorPicker value={color} onChange={setColor} />
         <div className="flex gap-2">
-          <Button size="sm" onClick={save}>
-            Salva
+          <Button size="icon" variant="ghost" onClick={save} title="Salva">
+            <IconCheck />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-            Annulla
+          <Button size="icon" variant="ghost" onClick={() => setEditing(false)} title="Annulla">
+            <IconX />
           </Button>
         </div>
       </div>

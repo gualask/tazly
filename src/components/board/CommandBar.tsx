@@ -1,4 +1,10 @@
-import { IconArrowRight, IconCornerDownLeft, IconX } from '@tabler/icons-react'
+import {
+  IconArrowRight,
+  IconChevronRight,
+  IconCornerDownLeft,
+  IconHome,
+  IconX,
+} from '@tabler/icons-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { TagBadge } from '@/components/tags/TagBadge'
@@ -13,6 +19,11 @@ type Suggestion =
   | { kind: 'category'; category: Category }
 
 export const COMMAND_BAR_INPUT_ID = 'tazly-command-bar-input'
+
+function isMac(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+}
 
 function focusActiveQuickAdd() {
   requestAnimationFrame(() => {
@@ -35,6 +46,8 @@ export function CommandBar() {
   const clearFilters = useBoardStore((s) => s.clearFilters)
   const isProjectNameTaken = useBoardStore((s) => s.isProjectNameTaken)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
+  const resetView = useBoardStore((s) => s.resetView)
+  const viewResetTick = useBoardStore((s) => s.viewResetTick)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState('')
@@ -55,7 +68,16 @@ export function CommandBar() {
     setDraft('')
     setActiveIdx(0)
     setError(null)
+    if (!focusProjectId) inputRef.current?.focus()
   }, [focusProjectId])
+
+  useEffect(() => {
+    if (viewResetTick === 0) return
+    setDraft('')
+    setActiveIdx(0)
+    setError(null)
+    inputRef.current?.focus()
+  }, [viewResetTick])
 
   const tagById = useMemo(() => new Map(tags.map((t) => [t.id, t])), [tags])
   const categoryById = useMemo(() => {
@@ -151,10 +173,17 @@ export function CommandBar() {
       applySuggestion(suggestions[activeIdx] ?? suggestions[0])
       return
     }
-    if (e.key === 'Tab' && !e.shiftKey && focusProject) {
-      e.preventDefault()
-      focusActiveQuickAdd()
-      return
+    if (e.key === 'Tab' && !e.shiftKey) {
+      if (focusProject) {
+        e.preventDefault()
+        focusActiveQuickAdd()
+        return
+      }
+      if (suggestions.length > 0) {
+        e.preventDefault()
+        applySuggestion(suggestions[activeIdx] ?? suggestions[0])
+        return
+      }
     }
     if (e.key === 'ArrowRight' && focusProject) {
       const el = inputRef.current
@@ -168,20 +197,20 @@ export function CommandBar() {
       }
       return
     }
-    if (
-      e.key === 'Backspace' &&
-      !draft &&
-      focusProject &&
-      (activeFilters.tagIds.length > 0 || activeFilters.categoryIds.length > 0)
-    ) {
-      e.preventDefault()
-      const lastTag = activeFilters.tagIds[activeFilters.tagIds.length - 1]
-      if (lastTag) {
-        toggleFilterTag(lastTag)
+    if (e.key === 'Backspace' && !draft && focusProject) {
+      if (activeFilters.tagIds.length > 0 || activeFilters.categoryIds.length > 0) {
+        e.preventDefault()
+        const lastTag = activeFilters.tagIds[activeFilters.tagIds.length - 1]
+        if (lastTag) {
+          toggleFilterTag(lastTag)
+          return
+        }
+        const lastCat = activeFilters.categoryIds[activeFilters.categoryIds.length - 1]
+        if (lastCat) toggleFilterCategory(lastCat)
         return
       }
-      const lastCat = activeFilters.categoryIds[activeFilters.categoryIds.length - 1]
-      if (lastCat) toggleFilterCategory(lastCat)
+      e.preventDefault()
+      clearFocus()
       return
     }
     if (e.key === 'Escape') {
@@ -216,7 +245,32 @@ export function CommandBar() {
           'focus-within:border-border focus-within:bg-muted/40',
         )}
       >
-        <span className="select-none font-mono text-base text-muted-foreground">›</span>
+        <button
+          type="button"
+          onClick={resetView}
+          title={`Reset (${isMac() ? '⌘' : 'Ctrl'})`}
+          aria-label="Reset vista"
+          className="-ml-0.5 inline-flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <IconHome className="size-4" />
+        </button>
+
+        {focusProject && (
+          <>
+            <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground text-xs">
+              {focusProject.name}
+              <button
+                type="button"
+                onClick={() => clearFocus()}
+                className="opacity-50 hover:opacity-100"
+                title="Esci dal progetto"
+              >
+                <IconX className="size-3" />
+              </button>
+            </span>
+            <IconChevronRight className="size-3 text-muted-foreground" />
+          </>
+        )}
 
         {focusProject &&
           activeFilters.tagIds.map((id) => {
