@@ -96,7 +96,7 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Hint k="→" label="note" />
         <Hint k="esc" label="annulla" />
         <Hint k="tab" label="inserisci task" />
-        <Hint k="/" label="focus bar" />
+        <Hint k="⌘K" label="reset / focus bar" />
         <Hint k="?" label="aiuto" />
         <button
           type="button"

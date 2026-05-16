@@ -28,6 +28,8 @@ export function BoardView() {
   const setSelectedTaskId = useBoardStore((s) => s.setSelectedTaskId)
   const setSelectedCategoryId = useBoardStore((s) => s.setSelectedCategoryId)
   const clearSelection = useBoardStore((s) => s.clearSelection)
+  const clearFocus = useBoardStore((s) => s.clearFocus)
+  const clearFilters = useBoardStore((s) => s.clearFilters)
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
 
@@ -246,6 +248,21 @@ export function BoardView() {
           return
         }
       }
+
+      if (e.key === 'Escape') {
+        if (selectedTaskId || selectedCategoryId) {
+          e.preventDefault()
+          clearSelection()
+          return
+        }
+        if (activeFilters.tagIds.length > 0 || activeFilters.categoryIds.length > 0) {
+          e.preventDefault()
+          clearFilters()
+          return
+        }
+        e.preventDefault()
+        clearFocus()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -257,6 +274,7 @@ export function BoardView() {
     sortedCategoryIds,
     selectedTaskId,
     selectedCategoryId,
+    activeFilters,
     toggleTaskDone,
     toggleCategoryCollapsed,
     expandCategory,
@@ -264,6 +282,9 @@ export function BoardView() {
     setEditingCategoryId,
     setSelectedTaskId,
     setSelectedCategoryId,
+    clearSelection,
+    clearFocus,
+    clearFilters,
     applyNavItem,
     requestOpenNotepad,
   ])

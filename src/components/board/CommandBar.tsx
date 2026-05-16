@@ -8,9 +8,10 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { TagBadge } from '@/components/tags/TagBadge'
+import { tryArrowRightToNotepad } from '@/lib/keyboard'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { Category, CategoryId, Project, Tag, TagId } from '@/types/domain'
+import type { Category, CategoryId, Project, Tag } from '@/types/domain'
 
 type Suggestion =
   | { kind: 'project'; id: string; name: string; openCount: number }
@@ -186,15 +187,7 @@ export function CommandBar() {
       }
     }
     if (e.key === 'ArrowRight' && focusProject) {
-      const el = inputRef.current
-      const atEnd =
-        (el?.selectionStart ?? draft.length) === draft.length &&
-        (el?.selectionEnd ?? draft.length) === draft.length
-      if (atEnd) {
-        e.preventDefault()
-        el?.blur()
-        requestOpenNotepad()
-      }
+      tryArrowRightToNotepad(e, inputRef.current, requestOpenNotepad)
       return
     }
     if (e.key === 'Backspace' && !draft && focusProject) {

@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import type { TagColor } from '@/lib/colors'
 import { newId } from '@/lib/id'
 import { chromeStorage } from '@/lib/storage'
-import type { Board, CategoryId, ProjectId, Tag, TagId, Task, TaskId } from '@/types/domain'
+import type { Board, CategoryId, Project, ProjectId, Tag, TagId, Task, TaskId } from '@/types/domain'
 
 export interface ActiveFilters {
   tagIds: TagId[]
@@ -457,9 +457,10 @@ export const useBoardStore = create<BoardState>()(
         if (version < 2) {
           state.board = {
             ...state.board,
-            projects: state.board.projects.map((p) =>
-              'notes' in p ? p : { ...p, notes: '' },
-            ),
+            projects: state.board.projects.map((p) => {
+              const raw = p as Project & { notes?: string }
+              return 'notes' in raw && raw.notes !== undefined ? raw : { ...raw, notes: '' }
+            }),
           }
         }
         return state

@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 
-import { COMMAND_BAR_INPUT_ID } from '@/components/board/CommandBar'
 import { useBoardStore } from '@/store/useBoardStore'
 
 interface Options {
@@ -10,7 +9,6 @@ interface Options {
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
-  if (target.id === COMMAND_BAR_INPUT_ID) return true
   const tag = target.tagName
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
   return target.isContentEditable
@@ -27,17 +25,6 @@ export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       const st = useBoardStore.getState()
       if (st.editingTaskId || st.editingCategoryId) return
-
-      if (e.key === '/') {
-        if (isEditableTarget(e.target)) return
-        const bar = document.getElementById(COMMAND_BAR_INPUT_ID) as HTMLInputElement | null
-        if (bar) {
-          e.preventDefault()
-          bar.focus()
-          bar.select()
-        }
-        return
-      }
 
       if (e.key === '?') {
         if (isEditableTarget(e.target)) return
@@ -68,54 +55,20 @@ export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
 
   useEffect(() => {
     if (!resetEnabled) return
-    const modifierKey = isMac() ? 'Meta' : 'Control'
-    let tracking = false
-    let invalidated = false
-
-    function startTracking() {
-      tracking = true
-      invalidated = false
-    }
-    function stopTracking() {
-      tracking = false
-      invalidated = false
-    }
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.repeat) return
-      if (e.key === modifierKey) {
-        const st = useBoardStore.getState()
-        if (st.editingTaskId || st.editingCategoryId) {
-          stopTracking()
-          return
-        }
-        startTracking()
-        return
-      }
-      if (tracking) invalidated = true
-    }
-
-    function onKeyUp(e: KeyboardEvent) {
-      if (e.key !== modifierKey) return
-      const shouldFire = tracking && !invalidated
-      stopTracking()
-      if (!shouldFire) return
+      const mod = isMac() ? e.metaKey : e.ctrlKey
+      if (!mod || e.shiftKey || e.altKey) return
+      if (e.key !== 'k' && e.key !== 'K') return
       const st = useBoardStore.getState()
       if (st.editingTaskId || st.editingCategoryId) return
+      e.preventDefault()
       st.resetView()
     }
 
-    function onBlur() {
-      stopTracking()
-    }
-
     window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('keyup', onKeyUp)
-    window.addEventListener('blur', onBlur)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('keyup', onKeyUp)
-      window.removeEventListener('blur', onBlur)
     }
   }, [resetEnabled])
 }

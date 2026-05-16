@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { COMMAND_BAR_INPUT_ID } from '@/components/board/CommandBar'
 import { TagBadge } from '@/components/tags/TagBadge'
+import { tryArrowRightToNotepad } from '@/lib/keyboard'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { Category, CategoryId, Project, Tag, TagId } from '@/types/domain'
@@ -174,18 +175,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
       }
       return
     }
-    if (e.key === 'ArrowRight') {
-      const el = e.currentTarget
-      const atEnd =
-        (el.selectionStart ?? 0) === el.value.length &&
-        (el.selectionEnd ?? 0) === el.value.length
-      if (atEnd) {
-        e.preventDefault()
-        el.blur()
-        requestOpenNotepad()
-        return
-      }
-    }
+    if (tryArrowRightToNotepad(e, e.currentTarget, requestOpenNotepad)) return
     if (e.key === 'Tab' || e.key === 'Enter') {
       if (e.key === 'Enter' && categoryDraft.includes(':')) {
         if (tryRapidParse(categoryDraft)) {
@@ -220,18 +210,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
       focusCommandBar()
       return
     }
-    if (e.key === 'ArrowRight') {
-      const el = e.currentTarget
-      const atEnd =
-        (el.selectionStart ?? 0) === el.value.length &&
-        (el.selectionEnd ?? 0) === el.value.length
-      if (atEnd) {
-        e.preventDefault()
-        el.blur()
-        requestOpenNotepad()
-        return
-      }
-    }
+    if (tryArrowRightToNotepad(e, e.currentTarget, requestOpenNotepad)) return
     if (e.key === 'Tab' && !e.shiftKey) {
       if (!titleDraft.trim()) return
       e.preventDefault()
