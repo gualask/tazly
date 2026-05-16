@@ -380,8 +380,9 @@ export const useBoardStore = create<BoardState>()(
       addTag(input) {
         const trimmed = trimOrNull(input.name)
         if (!trimmed) return
+        const normalized = trimmed.toUpperCase()
         set((s) => {
-          const exists = s.board.tags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())
+          const exists = s.board.tags.some((t) => t.name === normalized)
           if (exists) return s
           return {
             board: {
@@ -390,7 +391,7 @@ export const useBoardStore = create<BoardState>()(
                 ...s.board.tags,
                 {
                   id: newId(),
-                  name: trimmed,
+                  name: normalized,
                   color: input.color,
                   description: input.description?.trim() || undefined,
                 },
@@ -405,11 +406,10 @@ export const useBoardStore = create<BoardState>()(
           if (patch.name !== undefined) {
             const trimmed = trimOrNull(patch.name)
             if (!trimmed) return s
-            const dup = s.board.tags.some(
-              (t) => t.id !== id && t.name.toLowerCase() === trimmed.toLowerCase(),
-            )
+            const normalized = trimmed.toUpperCase()
+            const dup = s.board.tags.some((t) => t.id !== id && t.name === normalized)
             if (dup) return s
-            patch = { ...patch, name: trimmed }
+            patch = { ...patch, name: normalized }
           }
           return {
             board: {
