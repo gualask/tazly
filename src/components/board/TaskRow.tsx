@@ -1,8 +1,9 @@
 import { IconCheck, IconTrash, IconX } from '@tabler/icons-react'
 import { useState } from 'react'
 
+import { IconButton } from '@/components/common/IconButton'
 import { TagBadge } from '@/components/tags/TagBadge'
-import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -80,12 +81,12 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
             autoFocus
             className="flex-1"
           />
-          <Button size="icon" variant="ghost" onClick={save} title="Salva (Invio)">
+          <IconButton onClick={save} tooltip="Salva (Invio)">
             <IconCheck />
-          </Button>
-          <Button size="icon" variant="ghost" onClick={cancel} title="Annulla (Esc)">
+          </IconButton>
+          <IconButton onClick={cancel} tooltip="Annulla (Esc)">
             <IconX />
-          </Button>
+          </IconButton>
         </div>
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-1">
@@ -112,40 +113,41 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
     <div
       data-task-id={task.id}
       className={cn(
-        'group flex items-start gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-accent/40',
+        'group flex items-start gap-2 rounded-md px-2 py-0.5 transition-colors hover:bg-accent/40',
         highlighted && 'animate-task-highlight',
         selected && 'bg-accent/60 ring-1 ring-foreground/20',
       )}
     >
-      <input
-        type="checkbox"
+      <Checkbox
         checked={task.done}
-        onChange={() => toggleTaskDone(projectId, task.id)}
-        className="mt-1 size-4 cursor-pointer rounded border-input"
+        onCheckedChange={() => toggleTaskDone(projectId, task.id)}
+        className="mt-1 size-3.5 cursor-pointer"
       />
       <button
         type="button"
         data-task-edit
         onClick={openEdit}
         className={cn(
-          'flex flex-1 flex-wrap items-center gap-1.5 text-left text-sm',
+          'flex-1 text-left text-sm leading-6',
           task.done && 'text-muted-foreground line-through',
         )}
       >
         <span>{task.title}</span>
         {taskTags.map((t) => (
-          <TagBadge key={t.id} tag={t} />
+          <TagBadge
+            key={t.id}
+            tag={t}
+            className="ml-1.5 px-1 align-[1px] text-[10px] leading-4"
+          />
         ))}
       </button>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="opacity-0 group-hover:opacity-100"
+      <IconButton
+        className="size-6 opacity-0 group-hover:opacity-100"
         onClick={() => removeTask(projectId, task.id)}
-        title="Elimina task"
+        tooltip="Elimina task"
       >
         <IconTrash />
-      </Button>
+      </IconButton>
     </div>
   )
 }

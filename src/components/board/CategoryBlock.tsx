@@ -8,7 +8,23 @@ import {
 import { useState } from 'react'
 
 import { TaskRow } from '@/components/board/TaskRow'
+import { IconButton } from '@/components/common/IconButton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -41,6 +57,7 @@ export function CategoryBlock({
 
   const renaming = editingCategoryId === category.id
   const [name, setName] = useState(category.name)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   function openRename() {
     setName(category.name)
@@ -64,8 +81,10 @@ export function CategoryBlock({
   }
 
   return (
-    <div
+    <Collapsible
       data-category-id={category.id}
+      open={!category.collapsed}
+      onOpenChange={() => toggleCollapsed(projectId, category.id)}
       className={cn(
         'flex flex-col gap-1 rounded-md',
         selected && !renaming && 'bg-accent/40 ring-1 ring-foreground/20',
@@ -75,14 +94,11 @@ export function CategoryBlock({
         className="group flex items-center gap-1"
         onBlur={renaming ? onRenameBlur : undefined}
       >
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => toggleCollapsed(projectId, category.id)}
-          className="size-6"
-        >
-          {category.collapsed ? <IconChevronRight /> : <IconChevronDown />}
-        </Button>
+        <CollapsibleTrigger asChild>
+          <Button size="icon-xs" variant="ghost">
+            {category.collapsed ? <IconChevronRight /> : <IconChevronDown />}
+          </Button>
+        </CollapsibleTrigger>
         {renaming ? (
           <>
             <Input
@@ -101,12 +117,12 @@ export function CategoryBlock({
               }}
               className="h-7 flex-1"
             />
-            <Button size="icon" variant="ghost" onClick={saveRename} title="Salva (Invio)">
+            <IconButton onClick={saveRename} tooltip="Salva (Invio)">
               <IconCheck />
-            </Button>
-            <Button size="icon" variant="ghost" onClick={cancelRename} title="Annulla (Esc)">
+            </IconButton>
+            <IconButton onClick={cancelRename} tooltip="Annulla (Esc)">
               <IconX />
-            </Button>
+            </IconButton>
           </>
         ) : (
           <>
@@ -114,31 +130,41 @@ export function CategoryBlock({
               type="button"
               onClick={openRename}
               className="flex flex-1 items-center gap-2 text-left font-medium text-sm"
-              title="Rinomina"
             >
               <span>{category.name}</span>
               <span className="text-muted-foreground text-xs">{tasks.length}</span>
             </button>
             <div className="opacity-0 group-hover:opacity-100 transition">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => {
-                  const msg =
-                    tasks.length > 0
-                      ? `Eliminare la categoria "${category.name}" e i suoi ${tasks.length} task?`
-                      : `Eliminare la categoria "${category.name}"?`
-                  if (confirm(msg)) removeCategory(projectId, category.id)
-                }}
-              >
+              <IconButton onClick={() => setConfirmingDelete(true)} tooltip="Elimina categoria">
                 <IconTrash />
-              </Button>
+              </IconButton>
             </div>
+            <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Eliminare la categoria?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {tasks.length > 0
+                      ? `"${category.name}" verrà eliminata insieme ai suoi ${tasks.length} task.`
+                      : `"${category.name}" verrà eliminata.`}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={() => removeCategory(projectId, category.id)}
+                  >
+                    Elimina
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </>
         )}
       </div>
-      {!category.collapsed && (
-        <div className="ml-6 flex flex-col gap-1">
+      <CollapsibleContent>
+        <div className="ml-6 flex flex-col gap-0">
           {tasks.length === 0 && <p className="px-2 text-muted-foreground text-xs">Nessun task</p>}
           {tasks.map((t) => (
             <TaskRow
@@ -151,7 +177,7 @@ export function CategoryBlock({
             />
           ))}
         </div>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

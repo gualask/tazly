@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { COMMAND_BAR_INPUT_ID } from '@/components/board/CommandBar'
 import { Notepad } from '@/components/board/Notepad'
 import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
@@ -30,6 +31,9 @@ export function BoardView() {
   const clearSelection = useBoardStore((s) => s.clearSelection)
   const clearFocus = useBoardStore((s) => s.clearFocus)
   const clearFilters = useBoardStore((s) => s.clearFilters)
+  const setFocusProject = useBoardStore((s) => s.setFocusProject)
+  const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
+  const setOverviewSelectedProjectId = useBoardStore((s) => s.setOverviewSelectedProjectId)
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
 
@@ -78,25 +82,39 @@ export function BoardView() {
   }, [focusProject, taskFilter])
 
   useEffect(() => {
-    if (!focusProjectId) {
-      clearSelection()
+    if (focusProjectId) {
+      if (selectedTaskId && !visibleTaskIds.includes(selectedTaskId)) {
+        setSelectedTaskId(null)
+      }
       return
     }
-    if (selectedTaskId && !visibleTaskIds.includes(selectedTaskId)) {
+    if (!overviewSelectedProjectId) {
+      if (selectedTaskId || selectedCategoryId) clearSelection()
+      return
+    }
+    const proj = projects.find((p) => p.id === overviewSelectedProjectId)
+    if (selectedTaskId && !proj?.tasks.some((t) => t.id === selectedTaskId)) {
       setSelectedTaskId(null)
     }
-  }, [focusProjectId, visibleTaskIds, selectedTaskId, setSelectedTaskId, clearSelection])
+    if (selectedCategoryId && !proj?.categories.some((c) => c.id === selectedCategoryId)) {
+      setSelectedCategoryId(null)
+    }
+  }, [
+    focusProjectId,
+    overviewSelectedProjectId,
+    projects,
+    visibleTaskIds,
+    selectedTaskId,
+    selectedCategoryId,
+    setSelectedTaskId,
+    setSelectedCategoryId,
+    clearSelection,
+  ])
 
   const sortedCategoryIds = useMemo(() => {
     if (!focusProject) return [] as CategoryId[]
     return [...focusProject.categories].sort((a, b) => a.order - b.order).map((c) => c.id)
   }, [focusProject])
-
-  useEffect(() => {
-    if (selectedCategoryId && !sortedCategoryIds.includes(selectedCategoryId)) {
-      setSelectedCategoryId(null)
-    }
-  }, [sortedCategoryIds, selectedCategoryId, setSelectedCategoryId])
 
   function focusQuickAdd() {
     clearSelection()
@@ -141,6 +159,47 @@ export function BoardView() {
     },
     [setSelectedCategoryId, setSelectedTaskId],
   )
+
+  const overviewSelectedProject = useMemo(
+    () =>
+      overviewSelectedProjectId
+        ? (projects.find((p) => p.id === overviewSelectedProjectId) ?? null)
+        : null,
+    [projects, overviewSelectedProjectId],
+  )
+
+  const overviewNavItems = useMemo<NavItem[]>(() => {
+    if (!overviewSelectedProject) return []
+    const items: NavItem[] = []
+    const sortedCats = [...overviewSelectedProject.categories].sort((a, b) => a.order - b.order)
+    for (const c of sortedCats) {
+      items.push({ kind: 'header', categoryId: c.id })
+      if (c.collapsed) continue
+      for (const t of overviewSelectedProject.tasks) {
+        if (t.categoryId !== c.id) continue
+        if (!taskFilter(t)) continue
+        items.push({ kind: 'task', id: t.id, categoryId: c.id })
+      }
+    }
+    return items
+  }, [overviewSelectedProject, taskFilter])
+
+  const overviewNavIdx = useMemo(() => {
+    if (selectedTaskId)
+      return overviewNavItems.findIndex((i) => i.kind === 'task' && i.id === selectedTaskId)
+    if (selectedCategoryId)
+      return overviewNavItems.findIndex(
+        (i) => i.kind === 'header' && i.categoryId === selectedCategoryId,
+      )
+    return -1
+  }, [overviewNavItems, selectedTaskId, selectedCategoryId])
+
+  const overviewSortedCategoryIds = useMemo(() => {
+    if (!overviewSelectedProject) return [] as CategoryId[]
+    return [...overviewSelectedProject.categories]
+      .sort((a, b) => a.order - b.order)
+      .map((c) => c.id)
+  }, [overviewSelectedProject])
 
 
   useEffect(() => {
@@ -290,6 +349,173 @@ export function BoardView() {
   ])
 
   useEffect(() => {
+    if (focusProjectId) return
+    if (!overviewSelectedProjectId) return
+    function focusCommandBar() {
+      const el = document.getElementById(COMMAND_BAR_INPUT_ID) as HTMLInputElement | null
+      el?.focus()
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.defaultPrevented) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const st = useBoardStore.getState()
+      if (st.editingTaskId || st.editingCategoryId) return
+      if (isEditableTarget(e.target)) return
+      if (!overviewSelectedProjectId) return
+
+      const projIdx = projects.findIndex((p) => p.id === overviewSelectedProjectId)
+
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        if (projects.length === 0) return
+        const next = e.key === 'ArrowRight' ? projIdx + 1 : projIdx - 1
+        if (next < 0 || next >= projects.length) return
+        e.preventDefault()
+        setOverviewSelectedProjectId(projects[next].id)
+        return
+      }
+
+      if (e.key === 'Enter' && overviewNavIdx === -1) {
+        e.preventDefault()
+        setFocusProject(overviewSelectedProjectId)
+        return
+      }
+
+      if (e.key === 'Enter') {
+        if (selectedTaskId) {
+          e.preventDefault()
+          setEditingTaskId(selectedTaskId)
+          return
+        }
+        if (selectedCategoryId) {
+          e.preventDefault()
+          setEditingCategoryId(selectedCategoryId)
+          return
+        }
+      }
+
+      if (e.key === ' ') {
+        if (selectedTaskId) {
+          e.preventDefault()
+          toggleTaskDone(overviewSelectedProjectId, selectedTaskId)
+          return
+        }
+        if (selectedCategoryId) {
+          e.preventDefault()
+          toggleCategoryCollapsed(overviewSelectedProjectId, selectedCategoryId)
+          return
+        }
+      }
+
+      if (e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.preventDefault()
+        if (overviewNavItems.length === 0) return
+        if (e.key === 'ArrowDown') {
+          let startCatId: CategoryId | null = null
+          if (selectedCategoryId) startCatId = selectedCategoryId
+          else if (selectedTaskId) {
+            const t = overviewSelectedProject?.tasks.find((x) => x.id === selectedTaskId)
+            if (t) startCatId = t.categoryId
+          }
+          if (!startCatId) {
+            const firstHeader = overviewNavItems.find((i) => i.kind === 'header')
+            if (firstHeader?.kind === 'header')
+              setSelectedCategoryId(firstHeader.categoryId)
+            return
+          }
+          const i = overviewSortedCategoryIds.indexOf(startCatId)
+          if (i >= 0 && i < overviewSortedCategoryIds.length - 1) {
+            setSelectedCategoryId(overviewSortedCategoryIds[i + 1])
+          }
+          return
+        }
+        if (selectedTaskId) {
+          const t = overviewSelectedProject?.tasks.find((x) => x.id === selectedTaskId)
+          if (t) setSelectedCategoryId(t.categoryId)
+          return
+        }
+        if (selectedCategoryId) {
+          const i = overviewSortedCategoryIds.indexOf(selectedCategoryId)
+          if (i > 0) setSelectedCategoryId(overviewSortedCategoryIds[i - 1])
+          else setSelectedCategoryId(null)
+          return
+        }
+        return
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        if (overviewNavItems.length === 0) return
+        if (selectedCategoryId) {
+          const cat = overviewSelectedProject?.categories.find(
+            (c) => c.id === selectedCategoryId,
+          )
+          if (cat?.collapsed) expandCategory(overviewSelectedProjectId, selectedCategoryId)
+        }
+        if (overviewNavIdx === -1) {
+          const first = overviewNavItems[0]
+          if (first.kind === 'header') setSelectedCategoryId(first.categoryId)
+          else setSelectedTaskId(first.id)
+          return
+        }
+        const nextIdx = Math.min(overviewNavIdx + 1, overviewNavItems.length - 1)
+        const next = overviewNavItems[nextIdx]
+        if (next.kind === 'header') setSelectedCategoryId(next.categoryId)
+        else setSelectedTaskId(next.id)
+        return
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        if (overviewNavIdx === -1) {
+          setOverviewSelectedProjectId(null)
+          focusCommandBar()
+          return
+        }
+        if (overviewNavIdx === 0) {
+          clearSelection()
+          return
+        }
+        const prev = overviewNavItems[overviewNavIdx - 1]
+        if (prev.kind === 'header') setSelectedCategoryId(prev.categoryId)
+        else setSelectedTaskId(prev.id)
+        return
+      }
+
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        if (overviewNavIdx !== -1) {
+          clearSelection()
+          return
+        }
+        setOverviewSelectedProjectId(null)
+        focusCommandBar()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [
+    focusProjectId,
+    overviewSelectedProjectId,
+    overviewSelectedProject,
+    overviewNavItems,
+    overviewNavIdx,
+    overviewSortedCategoryIds,
+    projects,
+    selectedTaskId,
+    selectedCategoryId,
+    setOverviewSelectedProjectId,
+    setSelectedTaskId,
+    setSelectedCategoryId,
+    clearSelection,
+    setFocusProject,
+    setEditingTaskId,
+    setEditingCategoryId,
+    toggleTaskDone,
+    toggleCategoryCollapsed,
+    expandCategory,
+  ])
+
+  useEffect(() => {
     if (!selectedTaskId) return
     const el = document.querySelector<HTMLElement>(`[data-task-id="${selectedTaskId}"]`)
     el?.scrollIntoView({ block: 'nearest' })
@@ -301,11 +527,20 @@ export function BoardView() {
     el?.scrollIntoView({ block: 'nearest' })
   }, [selectedCategoryId])
 
+  useEffect(() => {
+    if (focusProjectId) return
+    if (!overviewSelectedProjectId) return
+    const el = document.querySelector<HTMLElement>(
+      `[data-project-id="${overviewSelectedProjectId}"]`,
+    )
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [overviewSelectedProjectId, focusProjectId])
+
   const noTagsHint = tags.length === 0
   const noProjects = projects.length === 0
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 pt-4 pb-24">
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 pt-4 pb-24">
       {(noTagsHint || noProjects) && (
         <div className="flex items-center gap-3 text-muted-foreground text-xs">
           {noTagsHint && projects.length > 0 && (
@@ -356,7 +591,16 @@ export function BoardView() {
       ) : (
         <BoardGrid count={projects.length}>
           {projects.map((p) => (
-            <ProjectCard key={p.id} project={p} allTags={sortedTags} taskFilter={taskFilter} />
+            <ProjectCard
+              key={p.id}
+              project={p}
+              allTags={sortedTags}
+              taskFilter={taskFilter}
+              selectedTaskId={overviewSelectedProjectId === p.id ? selectedTaskId : null}
+              selectedCategoryId={
+                overviewSelectedProjectId === p.id ? selectedCategoryId : null
+              }
+            />
           ))}
         </BoardGrid>
       )}
@@ -374,4 +618,3 @@ function BoardGrid({ count, children }: { count: number; children: React.ReactNo
         : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
   return <div className={`grid gap-4 ${cols}`}>{children}</div>
 }
-

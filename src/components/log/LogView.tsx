@@ -64,14 +64,14 @@ export function LogView() {
 
   if (grouped.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-6xl px-6 pt-10 text-center text-muted-foreground text-sm">
+      <div className="mx-auto w-full max-w-[1440px] px-4 pt-10 text-center text-muted-foreground text-sm">
         Nessun task completato ancora.
       </div>
     )
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 pt-4 pb-24">
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 pt-4 pb-24">
       {grouped.map(([key, items]) => (
         <section key={key} className="flex flex-col gap-1">
           <h2 className="sticky top-12 z-10 bg-background py-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
@@ -83,7 +83,7 @@ export function LogView() {
                 <button
                   type="button"
                   onClick={() => toggleTaskDone(project.id, task.id)}
-                  title="Riapri task"
+                  aria-label="Riapri task"
                   className="group flex w-full items-center gap-3 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
                 >
                   <span className="w-12 shrink-0 text-right font-mono text-muted-foreground text-xs tabular-nums">

@@ -19,6 +19,7 @@ interface BoardState {
   editingCategoryId: CategoryId | null
   selectedTaskId: TaskId | null
   selectedCategoryId: CategoryId | null
+  overviewSelectedProjectId: ProjectId | null
   notepadOpenTick: number
   viewResetTick: number
   lastClosedTask: { projectId: ProjectId; taskId: TaskId } | null
@@ -27,6 +28,7 @@ interface BoardState {
   setEditingCategoryId: (id: CategoryId | null) => void
   setSelectedTaskId: (id: TaskId | null) => void
   setSelectedCategoryId: (id: CategoryId | null) => void
+  setOverviewSelectedProjectId: (id: ProjectId | null) => void
   clearSelection: () => void
   requestOpenNotepad: () => void
   setFocusProject: (id: ProjectId | null) => void
@@ -99,6 +101,7 @@ export const useBoardStore = create<BoardState>()(
       editingCategoryId: null,
       selectedTaskId: null,
       selectedCategoryId: null,
+      overviewSelectedProjectId: null,
       notepadOpenTick: 0,
       viewResetTick: 0,
       lastClosedTask: null,
@@ -119,6 +122,10 @@ export const useBoardStore = create<BoardState>()(
         set({ selectedCategoryId: id, selectedTaskId: null })
       },
 
+      setOverviewSelectedProjectId(id) {
+        set({ overviewSelectedProjectId: id, selectedTaskId: null, selectedCategoryId: null })
+      },
+
       clearSelection() {
         set({ selectedTaskId: null, selectedCategoryId: null })
       },
@@ -128,11 +135,22 @@ export const useBoardStore = create<BoardState>()(
       },
 
       setFocusProject(id) {
-        set({ focusProjectId: id, activeFilters: { tagIds: [], categoryIds: [] } })
+        set({
+          focusProjectId: id,
+          overviewSelectedProjectId: null,
+          activeFilters: { tagIds: [], categoryIds: [] },
+        })
       },
 
       clearFocus() {
-        set({ focusProjectId: null, activeFilters: { tagIds: [], categoryIds: [] } })
+        const prevFocus = get().focusProjectId
+        set({
+          focusProjectId: null,
+          overviewSelectedProjectId: prevFocus,
+          selectedTaskId: null,
+          selectedCategoryId: null,
+          activeFilters: { tagIds: [], categoryIds: [] },
+        })
       },
 
       toggleFilterTag(id) {
@@ -164,6 +182,9 @@ export const useBoardStore = create<BoardState>()(
       resetView() {
         set((s) => ({
           focusProjectId: null,
+          overviewSelectedProjectId: null,
+          selectedTaskId: null,
+          selectedCategoryId: null,
           activeFilters: { tagIds: [], categoryIds: [] },
           viewResetTick: s.viewResetTick + 1,
         }))
@@ -216,6 +237,8 @@ export const useBoardStore = create<BoardState>()(
             projects: s.board.projects.filter((p) => p.id !== id),
           },
           focusProjectId: s.focusProjectId === id ? null : s.focusProjectId,
+          overviewSelectedProjectId:
+            s.overviewSelectedProjectId === id ? null : s.overviewSelectedProjectId,
         }))
       },
 

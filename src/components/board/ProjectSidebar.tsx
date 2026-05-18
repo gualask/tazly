@@ -1,5 +1,6 @@
 import { IconArrowsMaximize, IconLayoutGrid } from '@tabler/icons-react'
 
+import { IconButton } from '@/components/common/IconButton'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Project, ProjectId } from '@/types/domain'
@@ -14,13 +15,7 @@ interface ProjectSidebarProps {
 export function ProjectSidebar({ projects, focusedId, onFocus, onExitFocus }: ProjectSidebarProps) {
   return (
     <aside className="flex w-56 shrink-0 flex-col gap-1 border-r bg-muted/20 p-3">
-      <Button
-        size="sm"
-        variant="ghost"
-        className="justify-start"
-        onClick={onExitFocus}
-        title="Torna alla board"
-      >
+      <Button size="sm" variant="ghost" className="justify-start" onClick={onExitFocus}>
         <IconLayoutGrid />
         Tutti i progetti
       </Button>
@@ -53,8 +48,8 @@ interface FocusButtonProps {
 
 export function FocusButton({ onClick }: FocusButtonProps) {
   return (
-    <Button size="icon" variant="ghost" onClick={onClick} title="Modalità focus">
+    <IconButton onClick={onClick} tooltip="Modalità focus">
       <IconArrowsMaximize />
-    </Button>
+    </IconButton>
   )
 }

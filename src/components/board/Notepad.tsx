@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 
+import { Textarea } from '@/components/ui/textarea'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { ProjectId } from '@/types/domain'
 
@@ -20,7 +21,10 @@ export function Notepad({ projectId, notes, onBlurEmpty }: NotepadProps) {
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  const prevTickRef = useRef(notepadOpenTick)
   useEffect(() => {
+    if (notepadOpenTick === prevTickRef.current) return
+    prevTickRef.current = notepadOpenTick
     if (notepadOpenTick === 0) return
     textareaRef.current?.focus()
   }, [notepadOpenTick])
@@ -50,7 +54,7 @@ export function Notepad({ projectId, notes, onBlurEmpty }: NotepadProps) {
   return (
     <div data-tazly-notepad-root className="flex min-h-[60vh] flex-col">
       <div className="mb-1 px-1 text-muted-foreground text-xs">Note</div>
-      <textarea
+      <Textarea
         ref={textareaRef}
         value={notes}
         onChange={(e) => updateProjectNotes(projectId, e.target.value)}
@@ -61,7 +65,7 @@ export function Notepad({ projectId, notes, onBlurEmpty }: NotepadProps) {
         autoCorrect="off"
         autoCapitalize="off"
         autoComplete="off"
-        className="h-full min-h-[40vh] flex-1 resize-none rounded-md border border-border bg-card p-3 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
+        className="h-full min-h-[40vh] flex-1 resize-none bg-card p-3 leading-relaxed"
       />
     </div>
   )

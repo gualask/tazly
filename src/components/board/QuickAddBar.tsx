@@ -84,8 +84,15 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
     setActiveIdx(0)
   }, [step, categoryDraft, tagDraft])
 
+  const prevStepRef = useRef<Step | null>(null)
   useEffect(() => {
-    if (!active) return
+    if (!active) {
+      prevStepRef.current = null
+      return
+    }
+    const stepChanged = prevStepRef.current !== null && prevStepRef.current !== step
+    prevStepRef.current = step
+    if (!stepChanged) return
     if (step === 'category') categoryRef.current?.focus()
     if (step === 'title') titleRef.current?.focus()
     if (step === 'tags') tagRef.current?.focus()
@@ -394,7 +401,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
                   key={id}
                   onClick={() => setSelectedTagIds((prev) => prev.filter((x) => x !== id))}
                   className="group/tag"
-                  title="Rimuovi"
+                  aria-label="Rimuovi tag"
                 >
                   <TagBadge tag={t} className="pr-1 group-hover/tag:opacity-70" />
                 </button>
@@ -484,7 +491,7 @@ function BadgeChip({ label, onClear }: { label: string; onClear: () => void }) {
         type="button"
         onClick={onClear}
         className="opacity-50 hover:opacity-100"
-        title="Modifica"
+        aria-label="Modifica"
       >
         <IconX className="size-3" />
       </button>

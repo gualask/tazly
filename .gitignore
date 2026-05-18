@@ -25,3 +25,6 @@ dist-ssr
 
 # pnpm
 .pnpm-store/
+
+# playwright mcp captures
+.playwright-mcp/

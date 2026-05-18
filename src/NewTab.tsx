@@ -3,9 +3,10 @@ import { useState } from 'react'
 
 import { BoardView } from '@/components/board/BoardView'
 import { CommandBar } from '@/components/board/CommandBar'
+import { IconButton } from '@/components/common/IconButton'
 import { LogView } from '@/components/log/LogView'
 import { TagsView } from '@/components/tags/TagsView'
-import { Button } from '@/components/ui/button'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -23,61 +24,59 @@ export function NewTab() {
   })
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-20 border-b border-border bg-background">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-6 py-2">
-          <div className="flex-1">{view === 'board' && <CommandBar />}</div>
-          <Button
-            size="icon"
-            variant={view === 'log' ? 'secondary' : 'ghost'}
-            onClick={() => setView(view === 'log' ? 'board' : 'log')}
-            title="Storico completati"
-            className="size-7"
-          >
-            <IconHistory />
-          </Button>
-          <Button
-            size="icon"
-            variant={view === 'tags' ? 'secondary' : 'ghost'}
-            onClick={() => setView(view === 'tags' ? 'board' : 'tags')}
-            title="Gestione tag"
-            className="size-7"
-          >
-            <IconTag />
-          </Button>
-          <button
-            type="button"
-            onClick={() => setShowHelp((v) => !v)}
-            className="rounded border border-transparent px-1.5 py-0.5 font-mono text-muted-foreground text-xs hover:border-border"
-            title="Shortcut (?)"
-          >
-            ?
-          </button>
-          {import.meta.env.DEV && (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-7 text-muted-foreground"
-              title="Reset board (dev)"
-              onClick={() => {
-                if (confirm('Reset completo della board e dello storage. Procedere?')) {
-                  useBoardStore.persist.clearStorage()
-                  resetBoard()
-                }
-              }}
+    <TooltipProvider>
+      <main className="min-h-screen bg-background text-foreground">
+        <header className="sticky top-0 z-20 border-b border-border bg-background">
+          <div className="mx-auto flex w-full max-w-[1440px] items-center gap-2 px-4 py-2">
+            <div className="flex-1">{view === 'board' && <CommandBar />}</div>
+            <IconButton
+              variant={view === 'log' ? 'secondary' : 'ghost'}
+              onClick={() => setView(view === 'log' ? 'board' : 'log')}
+              tooltip="Storico completati"
+              className="size-7"
             >
-              <IconRefresh />
-            </Button>
-          )}
-        </div>
-      </header>
+              <IconHistory />
+            </IconButton>
+            <IconButton
+              variant={view === 'tags' ? 'secondary' : 'ghost'}
+              onClick={() => setView(view === 'tags' ? 'board' : 'tags')}
+              tooltip="Gestione tag"
+              className="size-7"
+            >
+              <IconTag />
+            </IconButton>
+            <button
+              type="button"
+              onClick={() => setShowHelp((v) => !v)}
+              className="rounded border border-transparent px-1.5 py-0.5 font-mono text-muted-foreground text-xs hover:border-border"
+              title="Shortcut (?)"
+            >
+              ?
+            </button>
+            {import.meta.env.DEV && (
+              <IconButton
+                className="size-7 text-muted-foreground"
+                tooltip="Reset board (dev)"
+                onClick={() => {
+                  if (confirm('Reset completo della board e dello storage. Procedere?')) {
+                    useBoardStore.persist.clearStorage()
+                    resetBoard()
+                  }
+                }}
+              >
+                <IconRefresh />
+              </IconButton>
+            )}
+          </div>
+        </header>
 
-      {view === 'board' && <BoardView />}
-      {view === 'tags' && <TagsView onClose={() => setView('board')} />}
-      {view === 'log' && <LogView />}
+        {view === 'board' && <BoardView />}
+        {view === 'tags' && <TagsView onClose={() => setView('board')} />}
+        {view === 'log' && <LogView />}
 
-      <Cheatsheet open={showHelp} onClose={() => setShowHelp(false)} />
-    </main>
+        <Cheatsheet open={showHelp} onClose={() => setShowHelp(false)} />
+      </main>
+    </TooltipProvider>
   )
 }
 
@@ -89,7 +88,7 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         'fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm',
       )}
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-6 py-2 text-muted-foreground text-xs">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2 text-muted-foreground text-xs">
         <Hint k="↵" label="conferma / edit" />
         <Hint k="↑↓" label="naviga elementi" />
         <Hint k="⇧↑↓" label="salta categoria" />

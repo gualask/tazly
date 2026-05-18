@@ -2,7 +2,18 @@ import { IconCheck, IconPencil, IconPlus, IconTrash, IconX } from '@tabler/icons
 import { useMemo, useState } from 'react'
 
 import { EmptyState } from '@/components/common/EmptyState'
+import { IconButton } from '@/components/common/IconButton'
 import { TagBadge } from '@/components/tags/TagBadge'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TAG_COLOR_CLASSES, TAG_COLORS, type TagColor } from '@/lib/colors'
@@ -42,6 +53,7 @@ function TagRow({ tag }: { tag: Tag }) {
   const [name, setName] = useState(tag.name)
   const [color, setColor] = useState<TagColor>(tag.color)
   const [description, setDescription] = useState(tag.description ?? '')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   function save() {
     updateTag(tag.id, { name, color, description: description.trim() || undefined })
@@ -59,12 +71,12 @@ function TagRow({ tag }: { tag: Tag }) {
         />
         <ColorPicker value={color} onChange={setColor} />
         <div className="flex gap-2">
-          <Button size="icon" variant="ghost" onClick={save} title="Salva">
+          <IconButton onClick={save} tooltip="Salva">
             <IconCheck />
-          </Button>
-          <Button size="icon" variant="ghost" onClick={() => setEditing(false)} title="Annulla">
+          </IconButton>
+          <IconButton onClick={() => setEditing(false)} tooltip="Annulla">
             <IconX />
-          </Button>
+          </IconButton>
         </div>
       </div>
     )
@@ -79,22 +91,29 @@ function TagRow({ tag }: { tag: Tag }) {
         <span className="flex-1" />
       )}
       <div className="flex items-center gap-1">
-        <Button size="icon" variant="ghost" onClick={() => setEditing(true)} title="Modifica">
+        <IconButton onClick={() => setEditing(true)} tooltip="Modifica">
           <IconPencil />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => {
-            if (confirm(`Eliminare il tag "${tag.name}"? Verrà rimosso da tutti i task.`)) {
-              removeTag(tag.id)
-            }
-          }}
-          title="Elimina"
-        >
+        </IconButton>
+        <IconButton onClick={() => setConfirmingDelete(true)} tooltip="Elimina">
           <IconTrash />
-        </Button>
+        </IconButton>
       </div>
+      <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare il tag?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{tag.name}" verrà rimosso da tutti i task.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => removeTag(tag.id)}>
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
@@ -115,9 +134,9 @@ function NewTagForm({ onClose }: { onClose: () => void }) {
     <div className="flex flex-col gap-2 rounded-md border bg-card p-3">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-sm">Nuovo tag</h3>
-        <Button size="icon" variant="ghost" onClick={onClose}>
+        <IconButton onClick={onClose} tooltip="Chiudi">
           <IconX />
-        </Button>
+        </IconButton>
       </div>
       <Input
         autoFocus

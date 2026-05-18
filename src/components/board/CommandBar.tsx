@@ -5,9 +5,12 @@ import {
   IconHome,
   IconX,
 } from '@tabler/icons-react'
+import { Command as CommandPrimitive } from 'cmdk'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { TagBadge } from '@/components/tags/TagBadge'
+import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui/command'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { tryArrowRightToNotepad } from '@/lib/keyboard'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -49,10 +52,10 @@ export function CommandBar() {
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
   const resetView = useBoardStore((s) => s.resetView)
   const viewResetTick = useBoardStore((s) => s.viewResetTick)
+  const setOverviewSelectedProjectId = useBoardStore((s) => s.setOverviewSelectedProjectId)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState('')
-  const [activeIdx, setActiveIdx] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [isFocused, setIsFocused] = useState(false)
 
@@ -67,15 +70,13 @@ export function CommandBar() {
 
   useEffect(() => {
     setDraft('')
-    setActiveIdx(0)
     setError(null)
-    if (!focusProjectId) inputRef.current?.focus()
+    inputRef.current?.focus()
   }, [focusProjectId])
 
   useEffect(() => {
     if (viewResetTick === 0) return
     setDraft('')
-    setActiveIdx(0)
     setError(null)
     inputRef.current?.focus()
   }, [viewResetTick])
@@ -119,9 +120,7 @@ export function CommandBar() {
     return [...tagItems, ...catItems]
   }, [draft, focusProject, projects, tags, activeFilters])
 
-  useEffect(() => {
-    setActiveIdx((idx) => (idx >= suggestions.length ? 0 : idx))
-  }, [suggestions])
+  const showSuggestions = isFocused && draft.trim().length > 0
 
   function applySuggestion(s: Suggestion) {
     if (s.kind === 'project') {
@@ -150,29 +149,18 @@ export function CommandBar() {
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    const hasDropdown = isFocused && draft.trim().length > 0 && suggestions.length > 0
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      if (hasDropdown) {
-        e.preventDefault()
-        if (e.key === 'ArrowDown') {
-          setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1))
-        } else {
-          setActiveIdx((i) => Math.max(i - 1, 0))
-        }
-        return
-      }
-      if (e.key === 'ArrowDown' && focusProject) {
+    if (e.key === 'ArrowDown' && !showSuggestions) {
+      if (focusProject) {
         e.preventDefault()
         focusActiveQuickAdd()
         return
       }
-      return
-    }
-    if (e.key === 'Enter') {
-      if (suggestions.length === 0) return
-      e.preventDefault()
-      applySuggestion(suggestions[activeIdx] ?? suggestions[0])
-      return
+      if (projects.length > 0) {
+        e.preventDefault()
+        setOverviewSelectedProjectId(projects[0].id)
+        inputRef.current?.blur()
+        return
+      }
     }
     if (e.key === 'Tab' && !e.shiftKey) {
       if (focusProject) {
@@ -180,9 +168,10 @@ export function CommandBar() {
         focusActiveQuickAdd()
         return
       }
+      // when no project is focused, let cmdk's Enter logic handle it — Tab fallback selects first
       if (suggestions.length > 0) {
         e.preventDefault()
-        applySuggestion(suggestions[activeIdx] ?? suggestions[0])
+        applySuggestion(suggestions[0])
         return
       }
     }
@@ -228,10 +217,12 @@ export function CommandBar() {
       : 'Vai a un progetto, o creane uno nuovo…'
     : 'Filtra · tag o categoria'
 
-  const showSuggestions = isFocused && draft.trim().length > 0
-
   return (
-    <div className="relative">
+    <Command
+      shouldFilter={false}
+      loop
+      className="relative overflow-visible bg-transparent"
+    >
       <div
         className={cn(
           'flex flex-wrap items-center gap-1.5 rounded-md border border-transparent bg-background px-2 py-1',
@@ -252,14 +243,18 @@ export function CommandBar() {
           <>
             <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground text-xs">
               {focusProject.name}
-              <button
-                type="button"
-                onClick={() => clearFocus()}
-                className="opacity-50 hover:opacity-100"
-                title="Esci dal progetto"
-              >
-                <IconX className="size-3" />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => clearFocus()}
+                    className="opacity-50 hover:opacity-100"
+                  >
+                    <IconX className="size-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Esci dal progetto</TooltipContent>
+              </Tooltip>
             </span>
             <IconChevronRight className="size-3 text-muted-foreground" />
           </>
@@ -275,7 +270,7 @@ export function CommandBar() {
                 key={`tag-${id}`}
                 onClick={() => toggleFilterTag(id)}
                 className="group/chip"
-                title="Rimuovi filtro"
+                aria-label="Rimuovi filtro"
               >
                 <TagBadge tag={t} className="pr-1 group-hover/chip:opacity-70" />
               </button>
@@ -291,7 +286,7 @@ export function CommandBar() {
                 key={`cat-${id}`}
                 onClick={() => toggleFilterCategory(id)}
                 className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-1.5 py-0.5 text-secondary-foreground text-xs hover:opacity-70"
-                title="Rimuovi filtro"
+                aria-label="Rimuovi filtro"
               >
                 <span className="text-muted-foreground">›</span>
                 {c.name}
@@ -299,12 +294,12 @@ export function CommandBar() {
             )
           })}
 
-        <input
+        <CommandPrimitive.Input
           ref={inputRef}
           id={COMMAND_BAR_INPUT_ID}
           value={draft}
-          onChange={(e) => {
-            setDraft(e.target.value)
+          onValueChange={(v) => {
+            setDraft(v)
             setError(null)
           }}
           onKeyDown={handleKeyDown}
@@ -329,31 +324,27 @@ export function CommandBar() {
         )}
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
-        <div
-          role="listbox"
-          className="absolute z-30 mt-0 max-h-72 w-full overflow-auto border-x border-b border-border bg-popover py-1 shadow-md"
-        >
-          {suggestions.map((s, i) => (
-            <SuggestionRow
-              key={suggestionKey(s)}
-              suggestion={s}
-              active={i === activeIdx}
-              onMouseEnter={() => setActiveIdx(i)}
-              onClick={() => applySuggestion(s)}
-            />
-          ))}
+      {showSuggestions && (
+        <div className="absolute top-full left-0 z-30 w-full overflow-hidden border-x border-b border-border bg-popover shadow-md">
+          <CommandList className="max-h-72">
+            <CommandEmpty className="px-4 py-2 text-left text-muted-foreground text-xs">
+              {focusProject ? 'Nessun tag o categoria corrisponde' : 'Nessun progetto corrisponde'}
+            </CommandEmpty>
+            {suggestions.map((s) => (
+              <CommandItem
+                key={suggestionKey(s)}
+                value={suggestionKey(s)}
+                onSelect={() => applySuggestion(s)}
+                className="group/item gap-2 rounded-none px-4 py-1.5"
+              >
+                <SuggestionContent suggestion={s} />
+                <IconCornerDownLeft className="ml-auto size-3 opacity-0 group-data-[selected=true]/item:opacity-100" />
+              </CommandItem>
+            ))}
+          </CommandList>
         </div>
       )}
-
-      {showSuggestions && suggestions.length === 0 && (
-        <div className="absolute z-30 w-full border-x border-b border-border bg-popover px-4 py-2 text-muted-foreground text-xs">
-          {focusProject
-            ? 'Nessun tag o categoria corrisponde'
-            : 'Nessun progetto corrisponde'}
-        </div>
-      )}
-    </div>
+    </Command>
   )
 }
 
@@ -362,36 +353,6 @@ function suggestionKey(s: Suggestion): string {
   if (s.kind === 'create-project') return `cp:${s.name}`
   if (s.kind === 'tag') return `t:${s.tag.id}`
   return `c:${s.category.id}`
-}
-
-interface RowProps {
-  suggestion: Suggestion
-  active: boolean
-  onClick: () => void
-  onMouseEnter: () => void
-}
-
-function SuggestionRow({ suggestion, active, onClick, onMouseEnter }: RowProps) {
-  return (
-    <button
-      type="button"
-      role="option"
-      aria-selected={active}
-      onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      className={cn(
-        'flex w-full items-center gap-2 px-4 py-1.5 text-left text-sm',
-        active && 'bg-accent text-accent-foreground',
-      )}
-    >
-      <SuggestionContent suggestion={suggestion} />
-      {active && (
-        <span className="ml-auto inline-flex items-center gap-1 text-muted-foreground text-xs">
-          <IconCornerDownLeft className="size-3" />
-        </span>
-      )}
-    </button>
-  )
 }
 
 function SuggestionContent({ suggestion }: { suggestion: Suggestion }) {
