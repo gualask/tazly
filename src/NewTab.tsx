@@ -1,4 +1,4 @@
-import { IconHistory, IconRefresh, IconTag } from '@tabler/icons-react'
+import { IconHistory, IconMoon, IconRefresh, IconSun, IconTag } from '@tabler/icons-react'
 import { useState } from 'react'
 
 import { BoardView } from '@/components/board/BoardView'
@@ -8,6 +8,7 @@ import { LogView } from '@/components/log/LogView'
 import { TagsView } from '@/components/tags/TagsView'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
+import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 
@@ -17,6 +18,7 @@ export function NewTab() {
   const [view, setView] = useState<View>('board')
   const [showHelp, setShowHelp] = useState(false)
   const resetBoard = useBoardStore((s) => s.resetBoard)
+  const { theme, toggleTheme } = useTheme()
 
   useGlobalHotkeys({
     onToggleHelp: () => setShowHelp((v) => !v),
@@ -25,8 +27,8 @@ export function NewTab() {
 
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-background text-foreground">
-        <header className="sticky top-0 z-20 border-b border-border bg-background">
+      <main className="min-h-screen text-foreground">
+        <header className="glass-bar sticky top-0 z-20 border-b border-border">
           <div className="mx-auto flex w-full max-w-[1440px] items-center gap-2 px-4 py-2">
             <div className="flex-1">{view === 'board' && <CommandBar />}</div>
             <IconButton
@@ -44,6 +46,14 @@ export function NewTab() {
               className="size-7"
             >
               <IconTag />
+            </IconButton>
+            <IconButton
+              variant="ghost"
+              onClick={toggleTheme}
+              tooltip={theme === 'dark' ? 'Tema chiaro' : 'Tema scuro'}
+              className="size-7"
+            >
+              {theme === 'dark' ? <IconSun /> : <IconMoon />}
             </IconButton>
             <button
               type="button"
@@ -85,7 +95,7 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <div
       className={cn(
-        'fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm',
+        'glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-border',
       )}
     >
       <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2 text-muted-foreground text-xs">

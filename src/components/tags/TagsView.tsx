@@ -32,13 +32,18 @@ function ColorPicker({ value, onChange }: { value: TagColor; onChange: (c: TagCo
             type="button"
             onClick={() => onChange(c)}
             className={cn(
-              'size-6 rounded-full border-2 transition',
-              classes.dot,
-              value === c ? 'border-foreground' : 'border-transparent hover:border-border',
+              'inline-flex h-6 min-w-8 items-center justify-center rounded-md border px-1.5 font-medium text-xs transition',
+              classes.bg,
+              classes.fg,
+              classes.border,
+              value === c &&
+                'ring-2 ring-foreground/60 ring-offset-1 ring-offset-background',
             )}
             aria-label={c}
             title={c}
-          />
+          >
+            Aa
+          </button>
         )
       })}
     </div>
