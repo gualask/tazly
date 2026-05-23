@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import type { TagColor } from '@/lib/colors'
 import { newId } from '@/lib/id'
 import { chromeStorage } from '@/lib/storage'
+import { copyText } from '@/lib/utils'
 import type {
   Board,
   CategoryId,
@@ -42,6 +43,7 @@ interface BoardState {
   setOverviewSelectedProjectId: (id: ProjectId | null) => void
   clearSelection: () => void
   markTaskCopied: (id: TaskId) => void
+  copyTaskById: (id: TaskId) => Promise<void>
   requestOpenNotepad: () => void
   setFocusProject: (id: ProjectId | null) => void
   clearFocus: () => void
@@ -146,6 +148,15 @@ export const useBoardStore = create<BoardState>()(
 
       markTaskCopied(id) {
         set((s) => ({ copiedTaskId: id, copyTick: s.copyTick + 1 }))
+      },
+
+      async copyTaskById(id) {
+        const task = get()
+          .board.projects.flatMap((p) => p.tasks)
+          .find((t) => t.id === id)
+        if (!task) return
+        const ok = await copyText(task.title)
+        if (ok) get().markTaskCopied(id)
       },
 
       requestOpenNotepad() {

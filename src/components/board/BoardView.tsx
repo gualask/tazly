@@ -1,22 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { COMMAND_BAR_INPUT_ID } from '@/components/board/CommandBar'
 import { Notepad } from '@/components/board/Notepad'
 import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
+import { isEditableTarget } from '@/lib/dom'
+import { focusCommandBar, focusQuickAdd as focusQuickAddInput } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { CategoryId, ProjectId, Task, TaskId } from '@/types/domain'
 
 interface BoardViewProps {
   onOpenLog?: (projectId: ProjectId) => void
-}
-
-function isEditableTarget(el: EventTarget | null): boolean {
-  if (!(el instanceof HTMLElement)) return false
-  const tag = el.tagName
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
-  return el.isContentEditable
 }
 
 export function BoardView({ onOpenLog }: BoardViewProps = {}) {
@@ -130,9 +124,7 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
 
   const focusQuickAdd = useCallback(() => {
     clearSelection()
-    const root = document.querySelector<HTMLElement>('[data-tazly-quickadd-root]')
-    const input = root?.querySelector<HTMLInputElement>('input')
-    input?.focus()
+    focusQuickAddInput()
   }, [clearSelection])
 
   type NavItem =
@@ -361,10 +353,6 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
   useEffect(() => {
     if (focusProjectId) return
     if (!overviewSelectedProjectId) return
-    function focusCommandBar() {
-      const el = document.getElementById(COMMAND_BAR_INPUT_ID) as HTMLInputElement | null
-      el?.focus()
-    }
     function onKey(e: KeyboardEvent) {
       if (e.defaultPrevented) return
       if (e.metaKey || e.ctrlKey || e.altKey) return

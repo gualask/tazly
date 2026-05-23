@@ -5,7 +5,7 @@ import { IconButton } from '@/components/common/IconButton'
 import { TagBadge } from '@/components/tags/TagBadge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { cn, copyText } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { ProjectId, Tag, Task } from '@/types/domain'
 
@@ -23,7 +23,7 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
   const removeTask = useBoardStore((s) => s.removeTask)
   const editingTaskId = useBoardStore((s) => s.editingTaskId)
   const setEditingTaskId = useBoardStore((s) => s.setEditingTaskId)
-  const markTaskCopied = useBoardStore((s) => s.markTaskCopied)
+  const copyTaskById = useBoardStore((s) => s.copyTaskById)
   const copiedTaskId = useBoardStore((s) => s.copiedTaskId)
   const copyTick = useBoardStore((s) => s.copyTick)
 
@@ -45,9 +45,8 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
     }
   }, [copyTick, copiedTaskId, task.id])
 
-  async function copy() {
-    const ok = await copyText(task.title)
-    if (ok) markTaskCopied(task.id)
+  function copy() {
+    void copyTaskById(task.id)
   }
 
   const tagById = new Map(allTags.map((t) => [t.id, t]))

@@ -1,23 +1,11 @@
 import { useEffect } from 'react'
 
-import { copyText } from '@/lib/utils'
+import { isEditableTarget, isMac } from '@/lib/dom'
 import { useBoardStore } from '@/store/useBoardStore'
 
 interface Options {
   onToggleHelp: () => void
   resetEnabled: boolean
-}
-
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  const tag = target.tagName
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
-  return target.isContentEditable
-}
-
-function isMac(): boolean {
-  if (typeof navigator === 'undefined') return false
-  return /Mac|iPhone|iPad|iPod/.test(navigator.platform)
 }
 
 export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
@@ -44,12 +32,8 @@ export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
       const st = useBoardStore.getState()
       if (st.editingTaskId || st.editingCategoryId) return
       if (!st.selectedTaskId) return
-      const task = st.board.projects.flatMap((p) => p.tasks).find((t) => t.id === st.selectedTaskId)
-      if (!task) return
       e.preventDefault()
-      void copyText(task.title).then((ok) => {
-        if (ok) useBoardStore.getState().markTaskCopied(task.id)
-      })
+      void st.copyTaskById(st.selectedTaskId)
     }
 
     function onUndo(e: KeyboardEvent) {

@@ -1,17 +1,12 @@
 import { IconChevronRight, IconX } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { COMMAND_BAR_INPUT_ID } from '@/components/board/CommandBar'
 import { TagBadge } from '@/components/tags/TagBadge'
+import { focusCommandBar } from '@/lib/focus'
 import { tryArrowRightToNotepad } from '@/lib/keyboard'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { Category, CategoryId, Project, Tag, TagId } from '@/types/domain'
-
-function focusCommandBar() {
-  const el = document.getElementById(COMMAND_BAR_INPUT_ID) as HTMLInputElement | null
-  el?.focus()
-}
+import type { CategoryId, Project, Tag, TagId } from '@/types/domain'
 
 type Step = 'category' | 'title' | 'tags'
 
@@ -531,6 +526,3 @@ function DropdownItem({
     </button>
   )
 }
-
-// Avoid unused-warning when type-only references remain
-export type { Category }

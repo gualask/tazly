@@ -1,18 +1,13 @@
 import { useEffect, useRef } from 'react'
 
 import { Textarea } from '@/components/ui/textarea'
+import { focusQuickAdd } from '@/lib/focus'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { ProjectId } from '@/types/domain'
 
 interface NotepadProps {
   projectId: ProjectId
   notes: string
-}
-
-function focusQuickAdd() {
-  const root = document.querySelector<HTMLElement>('[data-tazly-quickadd-root]')
-  const input = root?.querySelector<HTMLInputElement>('input')
-  input?.focus()
 }
 
 export function Notepad({ projectId, notes }: NotepadProps) {

@@ -100,7 +100,7 @@ export function NewTab() {
         </header>
 
         {view === 'board' && <BoardView onOpenLog={openLogForProject} />}
-        {view === 'tags' && <TagsView onClose={() => setView('board')} />}
+        {view === 'tags' && <TagsView />}
         {view === 'log' && (
           <LogView
             filterProjectId={logFilterProjectId}

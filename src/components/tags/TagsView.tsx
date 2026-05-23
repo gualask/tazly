@@ -172,11 +172,7 @@ function NewTagForm({ onClose }: { onClose: () => void }) {
   )
 }
 
-interface TagsViewProps {
-  onClose?: () => void
-}
-
-export function TagsView(_props: TagsViewProps = {}) {
+export function TagsView() {
   const tags = useBoardStore((s) => s.board.tags)
   const [creating, setCreating] = useState(false)
 

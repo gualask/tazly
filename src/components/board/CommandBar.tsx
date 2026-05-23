@@ -11,10 +11,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { TagBadge } from '@/components/tags/TagBadge'
 import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui/command'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { isMac } from '@/lib/dom'
+import { COMMAND_BAR_INPUT_ID, focusQuickAdd } from '@/lib/focus'
 import { tryArrowRightToNotepad } from '@/lib/keyboard'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { Category, CategoryId, Project, Tag } from '@/types/domain'
+import type { Category, CategoryId, Tag } from '@/types/domain'
 
 type Suggestion =
   | { kind: 'project'; id: string; name: string; openCount: number }
@@ -22,19 +24,8 @@ type Suggestion =
   | { kind: 'tag'; tag: Tag }
   | { kind: 'category'; category: Category }
 
-export const COMMAND_BAR_INPUT_ID = 'tazly-command-bar-input'
-
-function isMac(): boolean {
-  if (typeof navigator === 'undefined') return false
-  return /Mac|iPhone|iPad|iPod/.test(navigator.platform)
-}
-
 function focusActiveQuickAdd() {
-  requestAnimationFrame(() => {
-    const root = document.querySelector<HTMLElement>('[data-tazly-quickadd-root]')
-    const input = root?.querySelector<HTMLInputElement>('input')
-    input?.focus()
-  })
+  requestAnimationFrame(focusQuickAdd)
 }
 
 export function CommandBar() {
@@ -388,5 +379,3 @@ function SuggestionContent({ suggestion }: { suggestion: Suggestion }) {
     </>
   )
 }
-
-export type { Project }
