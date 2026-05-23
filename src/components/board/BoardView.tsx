@@ -3,11 +3,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Notepad } from '@/components/board/Notepad'
 import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
+import { categoryJumpTarget, type NavItem, useNavModel } from '@/hooks/useBoardNav'
 import { isEditableTarget } from '@/lib/dom'
 import { focusCommandBar, focusQuickAdd as focusQuickAddInput } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { CategoryId, ProjectId, Task, TaskId } from '@/types/domain'
+import type { ProjectId, Task, TaskId } from '@/types/domain'
 
 interface BoardViewProps {
   onOpenLog?: (projectId: ProjectId) => void
@@ -117,43 +118,10 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     clearSelection,
   ])
 
-  const sortedCategoryIds = useMemo(() => {
-    if (!focusProject) return [] as CategoryId[]
-    return [...focusProject.categories].sort((a, b) => a.order - b.order).map((c) => c.id)
-  }, [focusProject])
-
   const focusQuickAdd = useCallback(() => {
     clearSelection()
     focusQuickAddInput()
   }, [clearSelection])
-
-  type NavItem =
-    | { kind: 'header'; categoryId: CategoryId }
-    | { kind: 'task'; id: TaskId; categoryId: CategoryId }
-
-  const navItems = useMemo<NavItem[]>(() => {
-    if (!focusProject) return []
-    const items: NavItem[] = []
-    const sortedCats = [...focusProject.categories].sort((a, b) => a.order - b.order)
-    for (const c of sortedCats) {
-      items.push({ kind: 'header', categoryId: c.id })
-      if (c.collapsed) continue
-      for (const t of focusProject.tasks) {
-        if (t.categoryId !== c.id) continue
-        if (!taskFilter(t)) continue
-        items.push({ kind: 'task', id: t.id, categoryId: c.id })
-      }
-    }
-    return items
-  }, [focusProject, taskFilter])
-
-  const currentNavIdx = useMemo(() => {
-    if (selectedTaskId)
-      return navItems.findIndex((i) => i.kind === 'task' && i.id === selectedTaskId)
-    if (selectedCategoryId)
-      return navItems.findIndex((i) => i.kind === 'header' && i.categoryId === selectedCategoryId)
-    return -1
-  }, [navItems, selectedTaskId, selectedCategoryId])
 
   const applyNavItem = useCallback(
     (item: NavItem) => {
@@ -171,38 +139,17 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     [projects, overviewSelectedProjectId],
   )
 
-  const overviewNavItems = useMemo<NavItem[]>(() => {
-    if (!overviewSelectedProject) return []
-    const items: NavItem[] = []
-    const sortedCats = [...overviewSelectedProject.categories].sort((a, b) => a.order - b.order)
-    for (const c of sortedCats) {
-      items.push({ kind: 'header', categoryId: c.id })
-      if (c.collapsed) continue
-      for (const t of overviewSelectedProject.tasks) {
-        if (t.categoryId !== c.id) continue
-        if (!taskFilter(t)) continue
-        items.push({ kind: 'task', id: t.id, categoryId: c.id })
-      }
-    }
-    return items
-  }, [overviewSelectedProject, taskFilter])
+  const {
+    navItems,
+    navIdx: currentNavIdx,
+    sortedCategoryIds,
+  } = useNavModel(focusProject, taskFilter, selectedTaskId, selectedCategoryId)
 
-  const overviewNavIdx = useMemo(() => {
-    if (selectedTaskId)
-      return overviewNavItems.findIndex((i) => i.kind === 'task' && i.id === selectedTaskId)
-    if (selectedCategoryId)
-      return overviewNavItems.findIndex(
-        (i) => i.kind === 'header' && i.categoryId === selectedCategoryId,
-      )
-    return -1
-  }, [overviewNavItems, selectedTaskId, selectedCategoryId])
-
-  const overviewSortedCategoryIds = useMemo(() => {
-    if (!overviewSelectedProject) return [] as CategoryId[]
-    return [...overviewSelectedProject.categories]
-      .sort((a, b) => a.order - b.order)
-      .map((c) => c.id)
-  }, [overviewSelectedProject])
+  const {
+    navItems: overviewNavItems,
+    navIdx: overviewNavIdx,
+    sortedCategoryIds: overviewSortedCategoryIds,
+  } = useNavModel(overviewSelectedProject, taskFilter, selectedTaskId, selectedCategoryId)
 
   useEffect(() => {
     if (!focusProjectId || !focusProject) return
@@ -217,37 +164,16 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
       // Shift+↑/↓: salta tra header
       if (e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
         e.preventDefault()
-        if (e.key === 'ArrowDown') {
-          // header successiva rispetto alla cat corrente (o prima header se siamo fuori selezione)
-          let startCatId: CategoryId | null = null
-          if (selectedCategoryId) startCatId = selectedCategoryId
-          else if (selectedTaskId) {
-            const t = focusProject.tasks.find((x) => x.id === selectedTaskId)
-            if (t) startCatId = t.categoryId
-          }
-          if (!startCatId) {
-            const firstHeader = navItems.find((i) => i.kind === 'header')
-            if (firstHeader) applyNavItem(firstHeader)
-            return
-          }
-          const i = sortedCategoryIds.indexOf(startCatId)
-          if (i >= 0 && i < sortedCategoryIds.length - 1) {
-            setSelectedCategoryId(sortedCategoryIds[i + 1])
-          }
-          return
-        }
-        // Shift+↑
-        if (selectedTaskId) {
-          const t = focusProject.tasks.find((x) => x.id === selectedTaskId)
-          if (t) setSelectedCategoryId(t.categoryId)
-          return
-        }
-        if (selectedCategoryId) {
-          const i = sortedCategoryIds.indexOf(selectedCategoryId)
-          if (i > 0) setSelectedCategoryId(sortedCategoryIds[i - 1])
-          else focusQuickAdd()
-          return
-        }
+        const selectedTaskCategoryId = selectedTaskId
+          ? (focusProject.tasks.find((x) => x.id === selectedTaskId)?.categoryId ?? null)
+          : null
+        const jump = categoryJumpTarget(e.key === 'ArrowDown' ? 'down' : 'up', {
+          sortedCategoryIds,
+          selectedCategoryId,
+          selectedTaskCategoryId,
+        })
+        if (jump.type === 'select') setSelectedCategoryId(jump.id)
+        else if (jump.type === 'exitTop') focusQuickAdd()
         return
       }
 
@@ -407,35 +333,17 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
       if (e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
         e.preventDefault()
         if (overviewNavItems.length === 0) return
-        if (e.key === 'ArrowDown') {
-          let startCatId: CategoryId | null = null
-          if (selectedCategoryId) startCatId = selectedCategoryId
-          else if (selectedTaskId) {
-            const t = overviewSelectedProject?.tasks.find((x) => x.id === selectedTaskId)
-            if (t) startCatId = t.categoryId
-          }
-          if (!startCatId) {
-            const firstHeader = overviewNavItems.find((i) => i.kind === 'header')
-            if (firstHeader?.kind === 'header') setSelectedCategoryId(firstHeader.categoryId)
-            return
-          }
-          const i = overviewSortedCategoryIds.indexOf(startCatId)
-          if (i >= 0 && i < overviewSortedCategoryIds.length - 1) {
-            setSelectedCategoryId(overviewSortedCategoryIds[i + 1])
-          }
-          return
-        }
-        if (selectedTaskId) {
-          const t = overviewSelectedProject?.tasks.find((x) => x.id === selectedTaskId)
-          if (t) setSelectedCategoryId(t.categoryId)
-          return
-        }
-        if (selectedCategoryId) {
-          const i = overviewSortedCategoryIds.indexOf(selectedCategoryId)
-          if (i > 0) setSelectedCategoryId(overviewSortedCategoryIds[i - 1])
-          else setSelectedCategoryId(null)
-          return
-        }
+        const selectedTaskCategoryId = selectedTaskId
+          ? (overviewSelectedProject?.tasks.find((x) => x.id === selectedTaskId)?.categoryId ??
+            null)
+          : null
+        const jump = categoryJumpTarget(e.key === 'ArrowDown' ? 'down' : 'up', {
+          sortedCategoryIds: overviewSortedCategoryIds,
+          selectedCategoryId,
+          selectedTaskCategoryId,
+        })
+        if (jump.type === 'select') setSelectedCategoryId(jump.id)
+        else if (jump.type === 'exitTop') setSelectedCategoryId(null)
         return
       }
 
@@ -447,15 +355,11 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
           if (cat?.collapsed) expandCategory(overviewSelectedProjectId, selectedCategoryId)
         }
         if (overviewNavIdx === -1) {
-          const first = overviewNavItems[0]
-          if (first.kind === 'header') setSelectedCategoryId(first.categoryId)
-          else setSelectedTaskId(first.id)
+          applyNavItem(overviewNavItems[0])
           return
         }
         const nextIdx = Math.min(overviewNavIdx + 1, overviewNavItems.length - 1)
-        const next = overviewNavItems[nextIdx]
-        if (next.kind === 'header') setSelectedCategoryId(next.categoryId)
-        else setSelectedTaskId(next.id)
+        applyNavItem(overviewNavItems[nextIdx])
         return
       }
 
@@ -470,9 +374,7 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
           clearSelection()
           return
         }
-        const prev = overviewNavItems[overviewNavIdx - 1]
-        if (prev.kind === 'header') setSelectedCategoryId(prev.categoryId)
-        else setSelectedTaskId(prev.id)
+        applyNavItem(overviewNavItems[overviewNavIdx - 1])
         return
       }
 
@@ -499,8 +401,8 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     selectedTaskId,
     selectedCategoryId,
     setOverviewSelectedProjectId,
-    setSelectedTaskId,
     setSelectedCategoryId,
+    applyNavItem,
     clearSelection,
     setFocusProject,
     setEditingTaskId,
