@@ -11,14 +11,26 @@ import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
 import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
+import type { ProjectId } from '@/types/domain'
 
 type View = 'board' | 'tags' | 'log'
 
 export function NewTab() {
   const [view, setView] = useState<View>('board')
+  const [logFilterProjectId, setLogFilterProjectId] = useState<ProjectId | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const resetBoard = useBoardStore((s) => s.resetBoard)
   const { theme, toggleTheme } = useTheme()
+
+  function openLogForProject(projectId: ProjectId) {
+    setLogFilterProjectId(projectId)
+    setView('log')
+  }
+
+  function leaveLog() {
+    setLogFilterProjectId(null)
+    setView('board')
+  }
 
   useGlobalHotkeys({
     onToggleHelp: () => setShowHelp((v) => !v),
@@ -29,11 +41,18 @@ export function NewTab() {
     <TooltipProvider>
       <main className="min-h-screen text-foreground">
         <header className="glass-bar sticky top-0 z-20 border-b border-border">
-          <div className="mx-auto flex w-full max-w-[1440px] items-center gap-2 px-4 py-2">
+          <div className="mx-auto flex h-12 w-full max-w-[1440px] items-center gap-2 px-4">
             <div className="flex-1">{view === 'board' && <CommandBar />}</div>
             <IconButton
               variant={view === 'log' ? 'secondary' : 'ghost'}
-              onClick={() => setView(view === 'log' ? 'board' : 'log')}
+              onClick={() => {
+                if (view === 'log') {
+                  leaveLog()
+                } else {
+                  setLogFilterProjectId(null)
+                  setView('log')
+                }
+              }}
               tooltip="Storico completati"
               className="size-7"
             >
@@ -80,9 +99,14 @@ export function NewTab() {
           </div>
         </header>
 
-        {view === 'board' && <BoardView />}
+        {view === 'board' && <BoardView onOpenLog={openLogForProject} />}
         {view === 'tags' && <TagsView onClose={() => setView('board')} />}
-        {view === 'log' && <LogView />}
+        {view === 'log' && (
+          <LogView
+            filterProjectId={logFilterProjectId}
+            onClearFilter={() => setLogFilterProjectId(null)}
+          />
+        )}
 
         <Cheatsheet open={showHelp} onClose={() => setShowHelp(false)} />
       </main>

@@ -1,22 +1,34 @@
-import { IconNotes } from '@tabler/icons-react'
+import { IconChevronsLeft, IconChevronsRight, IconNotes } from '@tabler/icons-react'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { useBoardStore } from '@/store/useBoardStore'
+import { cn } from '@/lib/utils'
 
-export function NotepadTab() {
-  const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
+interface NotepadTabProps {
+  expanded?: boolean
+  onToggle: () => void
+}
+
+export function NotepadTab({ expanded, onToggle }: NotepadTabProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
           type="button"
-          onClick={requestOpenNotepad}
-          className="flex w-7 min-h-[60vh] shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:bg-accent hover:text-foreground"
+          onClick={onToggle}
+          className={cn(
+            'flex h-[60vh] w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-accent hover:text-foreground lg:h-full',
+            expanded && 'bg-accent/50 text-foreground',
+          )}
         >
           <IconNotes className="size-4" />
+          {expanded ? (
+            <IconChevronsRight className="size-3.5" />
+          ) : (
+            <IconChevronsLeft className="size-3.5" />
+          )}
         </button>
       </TooltipTrigger>
-      <TooltipContent>Apri note</TooltipContent>
+      <TooltipContent>{expanded ? 'Chiudi note' : 'Apri note'}</TooltipContent>
     </Tooltip>
   )
 }

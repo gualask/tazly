@@ -4,8 +4,13 @@ import { COMMAND_BAR_INPUT_ID } from '@/components/board/CommandBar'
 import { Notepad } from '@/components/board/Notepad'
 import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
+import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { CategoryId, Task, TaskId } from '@/types/domain'
+import type { CategoryId, ProjectId, Task, TaskId } from '@/types/domain'
+
+interface BoardViewProps {
+  onOpenLog?: (projectId: ProjectId) => void
+}
 
 function isEditableTarget(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false
@@ -14,7 +19,7 @@ function isEditableTarget(el: EventTarget | null): boolean {
   return el.isContentEditable
 }
 
-export function BoardView() {
+export function BoardView({ onOpenLog }: BoardViewProps = {}) {
   const projects = useBoardStore((s) => s.board.projects)
   const tags = useBoardStore((s) => s.board.tags)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
@@ -37,12 +42,19 @@ export function BoardView() {
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
 
-  const [notepadOpenSession, setNotepadOpenSession] = useState(false)
+  const [notepadExpanded, setNotepadExpanded] = useState(false)
 
+  // richiesta esplicita (freccia → o rail) → espandi e dai focus
   useEffect(() => {
     if (notepadOpenTick === 0) return
-    setNotepadOpenSession(true)
+    setNotepadExpanded(true)
   }, [notepadOpenTick])
+
+  // al cambio progetto: espanso di default solo se ci sono già delle note
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rivalutare solo al cambio progetto, non a ogni edit delle note
+  useEffect(() => {
+    setNotepadExpanded((focusProject?.notes.length ?? 0) > 0)
+  }, [focusProjectId])
 
   const sortedTags = useMemo(() => [...tags].sort((a, b) => a.name.localeCompare(b.name)), [tags])
 
@@ -144,11 +156,10 @@ export function BoardView() {
   }, [focusProject, taskFilter])
 
   const currentNavIdx = useMemo(() => {
-    if (selectedTaskId) return navItems.findIndex((i) => i.kind === 'task' && i.id === selectedTaskId)
+    if (selectedTaskId)
+      return navItems.findIndex((i) => i.kind === 'task' && i.id === selectedTaskId)
     if (selectedCategoryId)
-      return navItems.findIndex(
-        (i) => i.kind === 'header' && i.categoryId === selectedCategoryId,
-      )
+      return navItems.findIndex((i) => i.kind === 'header' && i.categoryId === selectedCategoryId)
     return -1
   }, [navItems, selectedTaskId, selectedCategoryId])
 
@@ -200,7 +211,6 @@ export function BoardView() {
       .sort((a, b) => a.order - b.order)
       .map((c) => c.id)
   }, [overviewSelectedProject])
-
 
   useEffect(() => {
     if (!focusProjectId || !focusProject) return
@@ -418,8 +428,7 @@ export function BoardView() {
           }
           if (!startCatId) {
             const firstHeader = overviewNavItems.find((i) => i.kind === 'header')
-            if (firstHeader?.kind === 'header')
-              setSelectedCategoryId(firstHeader.categoryId)
+            if (firstHeader?.kind === 'header') setSelectedCategoryId(firstHeader.categoryId)
             return
           }
           const i = overviewSortedCategoryIds.indexOf(startCatId)
@@ -446,9 +455,7 @@ export function BoardView() {
         e.preventDefault()
         if (overviewNavItems.length === 0) return
         if (selectedCategoryId) {
-          const cat = overviewSelectedProject?.categories.find(
-            (c) => c.id === selectedCategoryId,
-          )
+          const cat = overviewSelectedProject?.categories.find((c) => c.id === selectedCategoryId)
           if (cat?.collapsed) expandCategory(overviewSelectedProjectId, selectedCategoryId)
         }
         if (overviewNavIdx === -1) {
@@ -540,7 +547,12 @@ export function BoardView() {
   const noProjects = projects.length === 0
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 pt-4 pb-24">
+    <div
+      className={cn(
+        'mx-auto flex w-full max-w-[1440px] flex-col px-4',
+        focusProject ? 'gap-3 pt-3 pb-3 lg:h-[calc(100vh-3rem)]' : 'gap-4 pt-4 pb-24',
+      )}
+    >
       {(noTagsHint || noProjects) && (
         <div className="flex items-center gap-3 text-muted-foreground text-xs">
           {noTagsHint && projects.length > 0 && (
@@ -563,30 +575,30 @@ export function BoardView() {
       )}
 
       {focusProject ? (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 lg:flex-row">
-            <div className="min-w-0 flex-1">
-              <ProjectCard
-                project={focusProject}
-                allTags={sortedTags}
-                focused
-                taskFilter={taskFilter}
-                selectedTaskId={selectedTaskId}
-                selectedCategoryId={selectedCategoryId}
-              />
-            </div>
-            {focusProject.notes.length > 0 || notepadOpenSession ? (
-              <div className="lg:basis-1/3 lg:shrink-0">
-                <Notepad
-                  projectId={focusProject.id}
-                  notes={focusProject.notes}
-                  onBlurEmpty={() => setNotepadOpenSession(false)}
-                />
-              </div>
-            ) : (
-              <NotepadTab />
-            )}
+        <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row">
+          <div className="min-w-0 flex-1 lg:min-h-0">
+            <ProjectCard
+              project={focusProject}
+              allTags={sortedTags}
+              focused
+              taskFilter={taskFilter}
+              selectedTaskId={selectedTaskId}
+              selectedCategoryId={selectedCategoryId}
+              onOpenLog={onOpenLog}
+            />
           </div>
+          {notepadExpanded && (
+            <div className="lg:min-h-0 lg:basis-1/3 lg:shrink-0">
+              <Notepad projectId={focusProject.id} notes={focusProject.notes} />
+            </div>
+          )}
+          <NotepadTab
+            expanded={notepadExpanded}
+            onToggle={() => {
+              if (notepadExpanded) setNotepadExpanded(false)
+              else requestOpenNotepad()
+            }}
+          />
         </div>
       ) : (
         <BoardGrid count={projects.length}>
@@ -597,9 +609,8 @@ export function BoardView() {
               allTags={sortedTags}
               taskFilter={taskFilter}
               selectedTaskId={overviewSelectedProjectId === p.id ? selectedTaskId : null}
-              selectedCategoryId={
-                overviewSelectedProjectId === p.id ? selectedCategoryId : null
-              }
+              selectedCategoryId={overviewSelectedProjectId === p.id ? selectedCategoryId : null}
+              onOpenLog={onOpenLog}
             />
           ))}
         </BoardGrid>

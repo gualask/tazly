@@ -129,7 +129,7 @@ export function CategoryBlock({
             <button
               type="button"
               onClick={openRename}
-              className="flex flex-1 items-center gap-2 text-left font-medium text-sm"
+              className="flex flex-1 items-center gap-2 text-left font-bold text-sm"
             >
               <span>{category.name}</span>
               <span className="text-muted-foreground text-xs">{tasks.length}</span>

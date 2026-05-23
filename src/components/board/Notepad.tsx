@@ -7,7 +7,6 @@ import type { ProjectId } from '@/types/domain'
 interface NotepadProps {
   projectId: ProjectId
   notes: string
-  onBlurEmpty?: () => void
 }
 
 function focusQuickAdd() {
@@ -16,7 +15,7 @@ function focusQuickAdd() {
   input?.focus()
 }
 
-export function Notepad({ projectId, notes, onBlurEmpty }: NotepadProps) {
+export function Notepad({ projectId, notes }: NotepadProps) {
   const updateProjectNotes = useBoardStore((s) => s.updateProjectNotes)
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -47,25 +46,19 @@ export function Notepad({ projectId, notes, onBlurEmpty }: NotepadProps) {
     }
   }
 
-  function handleBlur() {
-    if (notes.length === 0) onBlurEmpty?.()
-  }
-
   return (
-    <div data-tazly-notepad-root className="flex min-h-[60vh] flex-col">
-      <div className="mb-1 px-1 text-muted-foreground text-xs">Note</div>
+    <div data-tazly-notepad-root className="flex h-[60vh] flex-col lg:h-full">
       <Textarea
         ref={textareaRef}
         value={notes}
         onChange={(e) => updateProjectNotes(projectId, e.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
         placeholder="Note del progetto…"
         spellCheck={false}
         autoCorrect="off"
         autoCapitalize="off"
         autoComplete="off"
-        className="h-full min-h-[40vh] flex-1 resize-none bg-card p-3 leading-relaxed"
+        className="h-full min-h-0 flex-1 resize-none overflow-auto rounded-xl bg-card p-3 leading-relaxed [field-sizing:fixed]"
       />
     </div>
   )

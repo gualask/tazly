@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { CategoryBlock } from '@/components/board/CategoryBlock'
 import { QuickAddBar } from '@/components/board/QuickAddBar'
 import { IconButton } from '@/components/common/IconButton'
-import { Card } from '@/components/ui/card'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +32,7 @@ interface ProjectCardProps {
   taskFilter?: (task: Task) => boolean
   selectedTaskId?: TaskId | null
   selectedCategoryId?: CategoryId | null
+  onOpenLog?: (projectId: Project['id']) => void
 }
 
 export function ProjectCard({
@@ -42,6 +42,7 @@ export function ProjectCard({
   taskFilter,
   selectedTaskId,
   selectedCategoryId,
+  onOpenLog,
 }: ProjectCardProps) {
   const renameProject = useBoardStore((s) => s.renameProject)
   const removeProject = useBoardStore((s) => s.removeProject)
@@ -63,7 +64,9 @@ export function ProjectCard({
     [project.categories],
   )
 
-  const openCount = project.tasks.filter((t) => !t.done).length
+  const totalCount = project.tasks.length
+  const doneCount = project.tasks.filter((t) => t.done).length
+  const progressPct = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100)
 
   function saveRename() {
     renameProject(project.id, name)
@@ -83,120 +86,161 @@ export function ProjectCard({
     }
   }, [])
 
-  const Wrapper = focused ? 'div' : Card
-
   return (
-    <Wrapper
+    <div
       data-project-id={project.id}
       className={cn(
-        'flex flex-col gap-3',
-        focused
-          ? 'min-h-[60vh]'
-          : 'rounded-md border-border bg-card p-4 py-4 shadow-none',
+        'flex flex-col gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground',
+        focused ? 'min-h-[60vh] lg:h-full lg:overflow-hidden' : 'overflow-hidden',
         isOverviewSelected && 'ring-1 ring-foreground/30',
       )}
     >
       <div
         className={cn(
-          focused && 'sticky top-11 z-10 -mx-4 flex flex-col gap-3 bg-background px-4 pt-2 pb-2',
+          'flex flex-col gap-2.5 border-border border-b',
+          'bg-gradient-to-b from-white/50 to-white/10 dark:from-white/[0.06] dark:to-white/[0.02]',
+          focused ? '-mx-4 -mt-4 rounded-t-xl px-4 pt-3 pb-3' : '-mx-4 -mt-4 px-4 pt-3.5 pb-3',
         )}
       >
-      {renaming ? (
-        <div className="flex items-center gap-2">
-          <Input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveRename()
-              if (e.key === 'Escape') setRenaming(false)
-            }}
-            className="h-8 flex-1"
-          />
-          <IconButton onClick={saveRename} tooltip="Salva (Invio)">
-            <IconCheck />
-          </IconButton>
-          <IconButton onClick={() => setRenaming(false)} tooltip="Annulla (Esc)">
-            <IconX />
-          </IconButton>
-        </div>
-      ) : (
-        <div
-          role={focused ? undefined : 'button'}
-          tabIndex={focused ? undefined : -1}
-          onClick={focused ? undefined : () => setFocusProject(project.id)}
-          className={cn(
-            'flex items-center gap-2',
-            !focused &&
-              '-mx-2 cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-accent/40',
-          )}
-        >
-          <span
+        {renaming ? (
+          <div className="flex items-center gap-2">
+            <Input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveRename()
+                if (e.key === 'Escape') setRenaming(false)
+              }}
+              className="h-8 flex-1"
+            />
+            <IconButton onClick={saveRename} tooltip="Salva (Invio)">
+              <IconCheck />
+            </IconButton>
+            <IconButton onClick={() => setRenaming(false)} tooltip="Annulla (Esc)">
+              <IconX />
+            </IconButton>
+          </div>
+        ) : (
+          <div
+            role={focused ? undefined : 'button'}
+            tabIndex={focused ? undefined : -1}
+            onClick={focused ? undefined : () => setFocusProject(project.id)}
             className={cn(
-              'flex-1 truncate font-semibold',
-              focused ? 'text-xl tracking-tight' : 'text-base',
+              'flex items-center gap-2',
+              !focused &&
+                '-mx-2 cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-accent/40',
             )}
           >
-            {project.name}
-          </span>
-          <span className="text-muted-foreground text-xs tabular-nums">
-            {openCount} apert{openCount === 1 ? 'o' : 'i'}
-          </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <IconButton tooltip="Opzioni progetto" className="size-7">
-                <IconDotsVertical />
-              </IconButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onSelect={() => setRenaming(true)}>
-                <IconPencil />
-                Rinomina
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={() => setConfirmingDelete(true)}
+            <span
+              className={cn(
+                'flex-1 truncate font-bold tracking-tight',
+                focused ? 'text-2xl' : 'text-lg',
+              )}
+            >
+              {project.name}
+            </span>
+            {totalCount > 0 && doneCount > 0 ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpenLog?.(project.id)
+                }}
+                className="rounded text-muted-foreground text-xs tabular-nums transition-colors hover:text-foreground"
+                title="Vedi completati"
               >
-                <IconTrash />
-                Elimina
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
-            <AlertDialogContent size="sm">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Eliminare il progetto?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  "{project.name}" verrà eliminato insieme a tutto il suo contenuto.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annulla</AlertDialogCancel>
-                <AlertDialogAction
-                  variant="destructive"
-                  onClick={() => removeProject(project.id)}
-                >
+                {doneCount}/{totalCount}
+              </button>
+            ) : (
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {doneCount}/{totalCount}
+              </span>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <IconButton tooltip="Opzioni progetto" className="size-7">
+                  <IconDotsVertical />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onSelect={() => setRenaming(true)}>
+                  <IconPencil />
+                  Rinomina
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onSelect={() => setConfirmingDelete(true)}>
+                  <IconTrash />
                   Elimina
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Eliminare il progetto?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    "{project.name}" verrà eliminato insieme a tutto il suo contenuto.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={() => removeProject(project.id)}
+                  >
+                    Elimina
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
 
-      {isFocusedHere && (
-        <div data-tazly-quickadd-root="">
-          <QuickAddBar
-            project={project}
-            allTags={allTags}
-            active
-            onTaskCreated={handleTaskCreated}
-          />
-        </div>
-      )}
+        {totalCount > 0 &&
+          !renaming &&
+          (doneCount > 0 ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenLog?.(project.id)
+              }}
+              className="group/progress h-1 w-full overflow-hidden rounded-full bg-foreground/10"
+              title="Vedi completati"
+              aria-label={`${doneCount} di ${totalCount} completati — vedi log`}
+            >
+              <div
+                className="h-full rounded-full bg-foreground/40 transition-[width,background-color] duration-300 group-hover/progress:bg-foreground/70"
+                style={{ width: `${progressPct}%` }}
+              />
+            </button>
+          ) : (
+            <div className="h-1 w-full overflow-hidden rounded-full bg-foreground/10">
+              <div
+                className="h-full rounded-full bg-foreground/40 transition-[width] duration-300"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          ))}
+
+        {isFocusedHere && (
+          <div data-tazly-quickadd-root="">
+            <QuickAddBar
+              project={project}
+              allTags={allTags}
+              active
+              onTaskCreated={handleTaskCreated}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div
+        className={cn(
+          'flex flex-col gap-2',
+          focused && 'lg:-mr-2 lg:min-h-0 lg:flex-1 lg:overflow-auto lg:pr-2',
+        )}
+      >
         {sortedCategories.length === 0 ? (
           isFocusedHere ? (
             <p className="text-muted-foreground text-xs">
@@ -223,6 +267,6 @@ export function ProjectCard({
           })
         )}
       </div>
-    </Wrapper>
+    </div>
   )
 }
