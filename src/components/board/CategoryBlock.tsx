@@ -1,10 +1,4 @@
-import {
-  IconCheck,
-  IconChevronDown,
-  IconChevronRight,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
+import { IconCheck, IconChevronDown, IconChevronRight, IconTrash, IconX } from '@tabler/icons-react'
 import { useState } from 'react'
 
 import { TaskRow } from '@/components/board/TaskRow'
@@ -20,11 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -90,10 +80,8 @@ export function CategoryBlock({
         selected && !renaming && 'bg-accent/40 ring-1 ring-foreground/20',
       )}
     >
-      <div
-        className="group flex items-center gap-1"
-        onBlur={renaming ? onRenameBlur : undefined}
-      >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: onBlur traccia l'uscita del focus durante la rinomina, non è un target interattivo */}
+      <div className="group flex items-center gap-1" onBlur={renaming ? onRenameBlur : undefined}>
         <CollapsibleTrigger asChild>
           <Button size="icon-xs" variant="ghost">
             {category.collapsed ? <IconChevronRight /> : <IconChevronDown />}

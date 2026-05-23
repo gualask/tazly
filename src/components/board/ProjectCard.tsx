@@ -122,10 +122,21 @@ export function ProjectCard({
             </IconButton>
           </div>
         ) : (
+          // biome-ignore lint/a11y/noStaticElementInteractions: interattivo solo fuori focus, con role/tabIndex/onKeyDown impostati di conseguenza
           <div
             role={focused ? undefined : 'button'}
             tabIndex={focused ? undefined : -1}
             onClick={focused ? undefined : () => setFocusProject(project.id)}
+            onKeyDown={
+              focused
+                ? undefined
+                : (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setFocusProject(project.id)
+                    }
+                  }
+            }
             className={cn(
               'flex items-center gap-2',
               !focused &&

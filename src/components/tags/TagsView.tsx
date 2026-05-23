@@ -36,8 +36,7 @@ function ColorPicker({ value, onChange }: { value: TagColor; onChange: (c: TagCo
               classes.bg,
               classes.fg,
               classes.border,
-              value === c &&
-                'ring-2 ring-foreground/60 ring-offset-1 ring-offset-background',
+              value === c && 'ring-2 ring-foreground/60 ring-offset-1 ring-offset-background',
             )}
             aria-label={c}
             title={c}

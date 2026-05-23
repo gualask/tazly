@@ -4,7 +4,16 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import type { TagColor } from '@/lib/colors'
 import { newId } from '@/lib/id'
 import { chromeStorage } from '@/lib/storage'
-import type { Board, CategoryId, Project, ProjectId, Tag, TagId, Task, TaskId } from '@/types/domain'
+import type {
+  Board,
+  CategoryId,
+  Project,
+  ProjectId,
+  Tag,
+  TagId,
+  Task,
+  TaskId,
+} from '@/types/domain'
 
 export interface ActiveFilters {
   tagIds: TagId[]
@@ -22,6 +31,8 @@ interface BoardState {
   overviewSelectedProjectId: ProjectId | null
   notepadOpenTick: number
   viewResetTick: number
+  copiedTaskId: TaskId | null
+  copyTick: number
   lastClosedTask: { projectId: ProjectId; taskId: TaskId } | null
 
   setEditingTaskId: (id: TaskId | null) => void
@@ -30,6 +41,7 @@ interface BoardState {
   setSelectedCategoryId: (id: CategoryId | null) => void
   setOverviewSelectedProjectId: (id: ProjectId | null) => void
   clearSelection: () => void
+  markTaskCopied: (id: TaskId) => void
   requestOpenNotepad: () => void
   setFocusProject: (id: ProjectId | null) => void
   clearFocus: () => void
@@ -104,6 +116,8 @@ export const useBoardStore = create<BoardState>()(
       overviewSelectedProjectId: null,
       notepadOpenTick: 0,
       viewResetTick: 0,
+      copiedTaskId: null,
+      copyTick: 0,
       lastClosedTask: null,
 
       setEditingTaskId(id) {
@@ -128,6 +142,10 @@ export const useBoardStore = create<BoardState>()(
 
       clearSelection() {
         set({ selectedTaskId: null, selectedCategoryId: null })
+      },
+
+      markTaskCopied(id) {
+        set((s) => ({ copiedTaskId: id, copyTick: s.copyTick + 1 }))
       },
 
       requestOpenNotepad() {
@@ -476,7 +494,7 @@ export const useBoardStore = create<BoardState>()(
       partialize: (s) => ({ board: s.board, focusProjectId: s.focusProjectId }),
       migrate: (persistedState, version) => {
         const state = persistedState as { board?: Board; focusProjectId?: ProjectId | null }
-        if (!state || !state.board) return state
+        if (!state?.board) return state
         if (version < 2) {
           state.board = {
             ...state.board,

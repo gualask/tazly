@@ -117,16 +117,13 @@ export function NewTab() {
 function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null
   return (
-    <div
-      className={cn(
-        'glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-border',
-      )}
-    >
+    <div className={cn('glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-border')}>
       <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2 text-muted-foreground text-xs">
         <Hint k="↵" label="conferma / edit" />
         <Hint k="↑↓" label="naviga elementi" />
         <Hint k="⇧↑↓" label="salta categoria" />
         <Hint k="→" label="note" />
+        <Hint k="⌘C" label="copia task" />
         <Hint k="esc" label="annulla" />
         <Hint k="tab" label="inserisci task" />
         <Hint k="⌘K" label="reset / focus bar" />

@@ -271,8 +271,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
     if (e.key === 'ArrowRight') {
       const el = e.currentTarget
       const atEnd =
-        (el.selectionStart ?? 0) === el.value.length &&
-        (el.selectionEnd ?? 0) === el.value.length
+        (el.selectionStart ?? 0) === el.value.length && (el.selectionEnd ?? 0) === el.value.length
       if (atEnd) {
         e.preventDefault()
         el.blur()

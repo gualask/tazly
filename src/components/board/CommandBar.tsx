@@ -68,6 +68,7 @@ export function CommandBar() {
     inputRef.current?.focus()
   }, [])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: focusProjectId è un trigger per resettare la bozza al cambio progetto, non un valore letto nel corpo
   useEffect(() => {
     setDraft('')
     setError(null)
@@ -218,11 +219,7 @@ export function CommandBar() {
     : 'Filtra · tag o categoria'
 
   return (
-    <Command
-      shouldFilter={false}
-      loop
-      className="relative overflow-visible bg-transparent"
-    >
+    <Command shouldFilter={false} loop className="relative overflow-visible bg-transparent">
       <div
         className={cn(
           'flex flex-wrap items-center gap-1.5 rounded-md border border-transparent bg-background px-2 py-1',

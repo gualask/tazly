@@ -48,9 +48,7 @@ export function LogView({ filterProjectId, onClearFilter }: LogViewProps = {}) {
 
   const tagById = useMemo(() => new Map<string, Tag>(tags.map((t) => [t.id, t])), [tags])
 
-  const filterProject = filterProjectId
-    ? projects.find((p) => p.id === filterProjectId)
-    : null
+  const filterProject = filterProjectId ? projects.find((p) => p.id === filterProjectId) : null
 
   const grouped = useMemo(() => {
     const entries: Entry[] = []

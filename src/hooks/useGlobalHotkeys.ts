@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { copyText } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 
 interface Options {
@@ -33,6 +34,24 @@ export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
       }
     }
 
+    function onCopy(e: KeyboardEvent) {
+      const mod = isMac() ? e.metaKey : e.ctrlKey
+      if (!mod || e.shiftKey || e.altKey) return
+      if (e.key !== 'c' && e.key !== 'C') return
+      if (isEditableTarget(e.target)) return
+      // non sovrascrivere la copia nativa quando c'è testo selezionato
+      if (window.getSelection()?.toString()) return
+      const st = useBoardStore.getState()
+      if (st.editingTaskId || st.editingCategoryId) return
+      if (!st.selectedTaskId) return
+      const task = st.board.projects.flatMap((p) => p.tasks).find((t) => t.id === st.selectedTaskId)
+      if (!task) return
+      e.preventDefault()
+      void copyText(task.title).then((ok) => {
+        if (ok) useBoardStore.getState().markTaskCopied(task.id)
+      })
+    }
+
     function onUndo(e: KeyboardEvent) {
       const mod = isMac() ? e.metaKey : e.ctrlKey
       if (!mod || e.shiftKey || e.altKey) return
@@ -46,9 +65,11 @@ export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
     }
 
     window.addEventListener('keydown', onKey)
+    window.addEventListener('keydown', onCopy)
     window.addEventListener('keydown', onUndo)
     return () => {
       window.removeEventListener('keydown', onKey)
+      window.removeEventListener('keydown', onCopy)
       window.removeEventListener('keydown', onUndo)
     }
   }, [onToggleHelp])

@@ -1,11 +1,11 @@
-import { IconCheck, IconTrash, IconX } from '@tabler/icons-react'
-import { useState } from 'react'
+import { IconCheck, IconCopy, IconTrash, IconX } from '@tabler/icons-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { IconButton } from '@/components/common/IconButton'
 import { TagBadge } from '@/components/tags/TagBadge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { cn, copyText } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { ProjectId, Tag, Task } from '@/types/domain'
 
@@ -23,10 +23,32 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
   const removeTask = useBoardStore((s) => s.removeTask)
   const editingTaskId = useBoardStore((s) => s.editingTaskId)
   const setEditingTaskId = useBoardStore((s) => s.setEditingTaskId)
+  const markTaskCopied = useBoardStore((s) => s.markTaskCopied)
+  const copiedTaskId = useBoardStore((s) => s.copiedTaskId)
+  const copyTick = useBoardStore((s) => s.copyTick)
 
   const editing = editingTaskId === task.id
   const [title, setTitle] = useState(task.title)
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(task.tagIds)
+  const [copied, setCopied] = useState(false)
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Flash + spunta quando il task viene copiato, da mouse o da tastiera
+  // biome-ignore lint/correctness/useExhaustiveDependencies: copyTick ri-attiva l'effetto a ogni copia
+  useEffect(() => {
+    if (copiedTaskId !== task.id) return
+    setCopied(true)
+    if (copiedTimer.current) clearTimeout(copiedTimer.current)
+    copiedTimer.current = setTimeout(() => setCopied(false), 1200)
+    return () => {
+      if (copiedTimer.current) clearTimeout(copiedTimer.current)
+    }
+  }, [copyTick, copiedTaskId, task.id])
+
+  async function copy() {
+    const ok = await copyText(task.title)
+    if (ok) markTaskCopied(task.id)
+  }
 
   const tagById = new Map(allTags.map((t) => [t.id, t]))
   const taskTags = task.tagIds.map((id) => tagById.get(id)).filter((x): x is Tag => Boolean(x))
@@ -60,10 +82,8 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
 
   if (editing) {
     return (
-      <div
-        className="flex flex-col gap-2 rounded-md border bg-card p-2"
-        onBlur={onContainerBlur}
-      >
+      // biome-ignore lint/a11y/noStaticElementInteractions: onBlur traccia l'uscita del focus per annullare l'edit, non è un target interattivo
+      <div className="flex flex-col gap-2 rounded-md border bg-card p-2" onBlur={onContainerBlur}>
         <div className="flex items-center gap-2">
           <Input
             value={title}
@@ -115,6 +135,7 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
       className={cn(
         'group flex items-start gap-2 rounded-md px-2 py-0.5 transition-colors hover:bg-accent/40',
         highlighted && 'animate-task-highlight',
+        copied && 'animate-task-copied',
         selected && 'bg-accent/60 ring-1 ring-foreground/20',
       )}
     >
@@ -128,21 +149,25 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
         data-task-edit
         onClick={openEdit}
         className={cn(
-          'flex-1 text-left text-sm leading-6',
+          'min-w-0 text-left text-sm leading-6',
           task.done && 'text-muted-foreground line-through',
         )}
       >
         <span>{task.title}</span>
         {taskTags.map((t) => (
-          <TagBadge
-            key={t.id}
-            tag={t}
-            className="ml-1.5 px-1 align-[1px] text-[10px] leading-4"
-          />
+          <TagBadge key={t.id} tag={t} className="ml-1.5 px-1 align-[1px] text-[10px] leading-4" />
         ))}
       </button>
       <IconButton
-        className="size-6 opacity-0 group-hover:opacity-100"
+        className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
+        onClick={copy}
+        tooltip="Copia testo"
+      >
+        <IconCopy />
+      </IconButton>
+      <div className="flex-1" />
+      <IconButton
+        className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
         onClick={() => removeTask(projectId, task.id)}
         tooltip="Elimina task"
       >

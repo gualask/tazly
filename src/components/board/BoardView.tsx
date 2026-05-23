@@ -128,12 +128,12 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     return [...focusProject.categories].sort((a, b) => a.order - b.order).map((c) => c.id)
   }, [focusProject])
 
-  function focusQuickAdd() {
+  const focusQuickAdd = useCallback(() => {
     clearSelection()
     const root = document.querySelector<HTMLElement>('[data-tazly-quickadd-root]')
     const input = root?.querySelector<HTMLInputElement>('input')
     input?.focus()
-  }
+  }, [clearSelection])
 
   type NavItem =
     | { kind: 'header'; categoryId: CategoryId }
@@ -349,13 +349,13 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     expandCategory,
     setEditingTaskId,
     setEditingCategoryId,
-    setSelectedTaskId,
     setSelectedCategoryId,
     clearSelection,
     clearFocus,
     clearFilters,
     applyNavItem,
     requestOpenNotepad,
+    focusQuickAdd,
   ])
 
   useEffect(() => {
