@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Notepad } from '@/components/board/Notepad'
 import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
-import { categoryJumpTarget, type NavItem, useNavModel } from '@/hooks/useBoardNav'
-import { isEditableTarget } from '@/lib/dom'
+import { useBoardKeyboard } from '@/hooks/useBoardKeyboard'
+import { useNavModel } from '@/hooks/useBoardNav'
 import { focusCommandBar, focusQuickAdd as focusQuickAddInput } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -19,11 +19,6 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
   const tags = useBoardStore((s) => s.board.tags)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
   const activeFilters = useBoardStore((s) => s.activeFilters)
-  const toggleTaskDone = useBoardStore((s) => s.toggleTaskDone)
-  const expandCategory = useBoardStore((s) => s.expandCategory)
-  const toggleCategoryCollapsed = useBoardStore((s) => s.toggleCategoryCollapsed)
-  const setEditingTaskId = useBoardStore((s) => s.setEditingTaskId)
-  const setEditingCategoryId = useBoardStore((s) => s.setEditingCategoryId)
   const selectedTaskId = useBoardStore((s) => s.selectedTaskId)
   const selectedCategoryId = useBoardStore((s) => s.selectedCategoryId)
   const setSelectedTaskId = useBoardStore((s) => s.setSelectedTaskId)
@@ -123,14 +118,6 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     focusQuickAddInput()
   }, [clearSelection])
 
-  const applyNavItem = useCallback(
-    (item: NavItem) => {
-      if (item.kind === 'header') setSelectedCategoryId(item.categoryId)
-      else setSelectedTaskId(item.id)
-    },
-    [setSelectedCategoryId, setSelectedTaskId],
-  )
-
   const overviewSelectedProject = useMemo(
     () =>
       overviewSelectedProjectId
@@ -139,278 +126,109 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     [projects, overviewSelectedProjectId],
   )
 
-  const {
-    navItems,
-    navIdx: currentNavIdx,
-    sortedCategoryIds,
-  } = useNavModel(focusProject, taskFilter, selectedTaskId, selectedCategoryId)
-
-  const {
-    navItems: overviewNavItems,
-    navIdx: overviewNavIdx,
-    sortedCategoryIds: overviewSortedCategoryIds,
-  } = useNavModel(overviewSelectedProject, taskFilter, selectedTaskId, selectedCategoryId)
-
-  useEffect(() => {
-    if (!focusProjectId || !focusProject) return
-    function onKey(e: KeyboardEvent) {
-      if (e.defaultPrevented) return
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const st = useBoardStore.getState()
-      if (st.editingTaskId || st.editingCategoryId) return
-      if (isEditableTarget(e.target)) return
-      if (!focusProject || navItems.length === 0) return
-
-      // Shift+↑/↓: salta tra header
-      if (e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-        e.preventDefault()
-        const selectedTaskCategoryId = selectedTaskId
-          ? (focusProject.tasks.find((x) => x.id === selectedTaskId)?.categoryId ?? null)
-          : null
-        const jump = categoryJumpTarget(e.key === 'ArrowDown' ? 'down' : 'up', {
-          sortedCategoryIds,
-          selectedCategoryId,
-          selectedTaskCategoryId,
-        })
-        if (jump.type === 'select') setSelectedCategoryId(jump.id)
-        else if (jump.type === 'exitTop') focusQuickAdd()
-        return
-      }
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        // se header collassata e siamo su di essa, espandila prima
-        if (selectedCategoryId) {
-          const cat = focusProject.categories.find((c) => c.id === selectedCategoryId)
-          if (cat?.collapsed) expandCategory(focusProject.id, selectedCategoryId)
-        }
-        if (currentNavIdx === -1) {
-          applyNavItem(navItems[0])
-          return
-        }
-        const nextIdx = Math.min(currentNavIdx + 1, navItems.length - 1)
-        applyNavItem(navItems[nextIdx])
-        return
-      }
-
-      if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        if (currentNavIdx <= 0) {
-          // siamo sul primo elemento (header prima cat) o nessuna selezione → esci verso QuickAdd
-          focusQuickAdd()
-          return
-        }
-        applyNavItem(navItems[currentNavIdx - 1])
-        return
-      }
-
-      if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        requestOpenNotepad()
-        return
-      }
-
-      if (e.key === ' ') {
-        if (selectedTaskId) {
-          e.preventDefault()
-          if (focusProjectId) toggleTaskDone(focusProjectId, selectedTaskId)
-          return
-        }
-        if (selectedCategoryId) {
-          e.preventDefault()
-          if (focusProjectId) toggleCategoryCollapsed(focusProjectId, selectedCategoryId)
-          return
-        }
-      }
-
-      if (e.key === 'Enter') {
-        if (selectedTaskId) {
-          e.preventDefault()
-          setEditingTaskId(selectedTaskId)
-          return
-        }
-        if (selectedCategoryId) {
-          e.preventDefault()
-          setEditingCategoryId(selectedCategoryId)
-          return
-        }
-      }
-
-      if (e.key === 'Escape') {
-        if (selectedTaskId || selectedCategoryId) {
-          e.preventDefault()
-          clearSelection()
-          return
-        }
-        if (activeFilters.tagIds.length > 0 || activeFilters.categoryIds.length > 0) {
-          e.preventDefault()
-          clearFilters()
-          return
-        }
-        e.preventDefault()
-        clearFocus()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [
-    focusProjectId,
-    focusProject,
-    navItems,
-    currentNavIdx,
-    sortedCategoryIds,
-    selectedTaskId,
-    selectedCategoryId,
-    activeFilters,
-    toggleTaskDone,
-    toggleCategoryCollapsed,
-    expandCategory,
-    setEditingTaskId,
-    setEditingCategoryId,
-    setSelectedCategoryId,
-    clearSelection,
-    clearFocus,
-    clearFilters,
-    applyNavItem,
-    requestOpenNotepad,
-    focusQuickAdd,
-  ])
-
-  useEffect(() => {
-    if (focusProjectId) return
-    if (!overviewSelectedProjectId) return
-    function onKey(e: KeyboardEvent) {
-      if (e.defaultPrevented) return
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const st = useBoardStore.getState()
-      if (st.editingTaskId || st.editingCategoryId) return
-      if (isEditableTarget(e.target)) return
-      if (!overviewSelectedProjectId) return
-
-      const projIdx = projects.findIndex((p) => p.id === overviewSelectedProjectId)
-
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        if (projects.length === 0) return
-        const next = e.key === 'ArrowRight' ? projIdx + 1 : projIdx - 1
-        if (next < 0 || next >= projects.length) return
-        e.preventDefault()
-        setOverviewSelectedProjectId(projects[next].id)
-        return
-      }
-
-      if (e.key === 'Enter' && overviewNavIdx === -1) {
-        e.preventDefault()
-        setFocusProject(overviewSelectedProjectId)
-        return
-      }
-
-      if (e.key === 'Enter') {
-        if (selectedTaskId) {
-          e.preventDefault()
-          setEditingTaskId(selectedTaskId)
-          return
-        }
-        if (selectedCategoryId) {
-          e.preventDefault()
-          setEditingCategoryId(selectedCategoryId)
-          return
-        }
-      }
-
-      if (e.key === ' ') {
-        if (selectedTaskId) {
-          e.preventDefault()
-          toggleTaskDone(overviewSelectedProjectId, selectedTaskId)
-          return
-        }
-        if (selectedCategoryId) {
-          e.preventDefault()
-          toggleCategoryCollapsed(overviewSelectedProjectId, selectedCategoryId)
-          return
-        }
-      }
-
-      if (e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-        e.preventDefault()
-        if (overviewNavItems.length === 0) return
-        const selectedTaskCategoryId = selectedTaskId
-          ? (overviewSelectedProject?.tasks.find((x) => x.id === selectedTaskId)?.categoryId ??
-            null)
-          : null
-        const jump = categoryJumpTarget(e.key === 'ArrowDown' ? 'down' : 'up', {
-          sortedCategoryIds: overviewSortedCategoryIds,
-          selectedCategoryId,
-          selectedTaskCategoryId,
-        })
-        if (jump.type === 'select') setSelectedCategoryId(jump.id)
-        else if (jump.type === 'exitTop') setSelectedCategoryId(null)
-        return
-      }
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        if (overviewNavItems.length === 0) return
-        if (selectedCategoryId) {
-          const cat = overviewSelectedProject?.categories.find((c) => c.id === selectedCategoryId)
-          if (cat?.collapsed) expandCategory(overviewSelectedProjectId, selectedCategoryId)
-        }
-        if (overviewNavIdx === -1) {
-          applyNavItem(overviewNavItems[0])
-          return
-        }
-        const nextIdx = Math.min(overviewNavIdx + 1, overviewNavItems.length - 1)
-        applyNavItem(overviewNavItems[nextIdx])
-        return
-      }
-
-      if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        if (overviewNavIdx === -1) {
-          setOverviewSelectedProjectId(null)
-          focusCommandBar()
-          return
-        }
-        if (overviewNavIdx === 0) {
-          clearSelection()
-          return
-        }
-        applyNavItem(overviewNavItems[overviewNavIdx - 1])
-        return
-      }
-
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        if (overviewNavIdx !== -1) {
-          clearSelection()
-          return
-        }
-        setOverviewSelectedProjectId(null)
-        focusCommandBar()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [
-    focusProjectId,
-    overviewSelectedProjectId,
+  const focusNav = useNavModel(focusProject, taskFilter, selectedTaskId, selectedCategoryId)
+  const overviewNav = useNavModel(
     overviewSelectedProject,
-    overviewNavItems,
-    overviewNavIdx,
-    overviewSortedCategoryIds,
-    projects,
+    taskFilter,
     selectedTaskId,
     selectedCategoryId,
-    setOverviewSelectedProjectId,
-    setSelectedCategoryId,
-    applyNavItem,
-    clearSelection,
-    setFocusProject,
-    setEditingTaskId,
-    setEditingCategoryId,
-    toggleTaskDone,
-    toggleCategoryCollapsed,
-    expandCategory,
-  ])
+  )
+
+  // --- Navigazione da tastiera: modalità focus ---
+  const focusEscape = useCallback(
+    (e: KeyboardEvent) => {
+      e.preventDefault()
+      if (selectedTaskId || selectedCategoryId) {
+        clearSelection()
+        return
+      }
+      if (activeFilters.tagIds.length > 0 || activeFilters.categoryIds.length > 0) {
+        clearFilters()
+        return
+      }
+      clearFocus()
+    },
+    [selectedTaskId, selectedCategoryId, activeFilters, clearSelection, clearFilters, clearFocus],
+  )
+
+  const focusArrowRight = useCallback(
+    (e: KeyboardEvent) => {
+      e.preventDefault()
+      requestOpenNotepad()
+    },
+    [requestOpenNotepad],
+  )
+
+  useBoardKeyboard({
+    active: !!focusProjectId,
+    projectId: focusProjectId,
+    project: focusProject,
+    navModel: focusNav,
+    selectedTaskId,
+    selectedCategoryId,
+    onArrowRight: focusArrowRight,
+    onArrowUpAtUnselected: focusQuickAdd,
+    onArrowUpAtFirst: focusQuickAdd,
+    onJumpExitTop: focusQuickAdd,
+    onEscape: focusEscape,
+  })
+
+  // --- Navigazione da tastiera: modalità overview ---
+  const overviewHorizontal = useCallback(
+    (e: KeyboardEvent) => {
+      if (!overviewSelectedProjectId || projects.length === 0) return
+      const projIdx = projects.findIndex((p) => p.id === overviewSelectedProjectId)
+      const next = e.key === 'ArrowRight' ? projIdx + 1 : projIdx - 1
+      if (next < 0 || next >= projects.length) return
+      e.preventDefault()
+      setOverviewSelectedProjectId(projects[next].id)
+    },
+    [overviewSelectedProjectId, projects, setOverviewSelectedProjectId],
+  )
+
+  const overviewExitToCommandBar = useCallback(() => {
+    setOverviewSelectedProjectId(null)
+    focusCommandBar()
+  }, [setOverviewSelectedProjectId])
+
+  const overviewEnterUnselected = useCallback(() => {
+    if (!overviewSelectedProjectId) return false
+    setFocusProject(overviewSelectedProjectId)
+    return true
+  }, [overviewSelectedProjectId, setFocusProject])
+
+  const clearSelectedCategory = useCallback(
+    () => setSelectedCategoryId(null),
+    [setSelectedCategoryId],
+  )
+
+  const overviewEscape = useCallback(
+    (e: KeyboardEvent) => {
+      e.preventDefault()
+      if (overviewNav.navIdx !== -1) {
+        clearSelection()
+        return
+      }
+      overviewExitToCommandBar()
+    },
+    [overviewNav.navIdx, clearSelection, overviewExitToCommandBar],
+  )
+
+  useBoardKeyboard({
+    active: !focusProjectId && !!overviewSelectedProjectId,
+    projectId: overviewSelectedProjectId,
+    project: overviewSelectedProject,
+    navModel: overviewNav,
+    selectedTaskId,
+    selectedCategoryId,
+    onArrowLeft: overviewHorizontal,
+    onArrowRight: overviewHorizontal,
+    onArrowUpAtUnselected: overviewExitToCommandBar,
+    onArrowUpAtFirst: clearSelection,
+    onJumpExitTop: clearSelectedCategory,
+    onEnterUnselected: overviewEnterUnselected,
+    onEscape: overviewEscape,
+  })
 
   useEffect(() => {
     if (!selectedTaskId) return
