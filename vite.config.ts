@@ -7,6 +7,13 @@ import manifest from './src/manifest'
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), crx({ manifest })],
+  build: {
+    rollupOptions: {
+      // index.html non è più referenziato dal manifest (niente override newtab):
+      // la dichiariamo come entry esplicita così resta nel bundle.
+      input: { index: path.resolve(__dirname, 'index.html') },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
