@@ -1,28 +1,18 @@
-import {
-  IconArrowRight,
-  IconChevronRight,
-  IconCornerDownLeft,
-  IconHome,
-  IconX,
-} from '@tabler/icons-react'
+import { IconChevronRight, IconCornerDownLeft, IconHome, IconX } from '@tabler/icons-react'
 import { Command as CommandPrimitive } from 'cmdk'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { TagBadge } from '@/components/tags/TagBadge'
 import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui/command'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { buildSuggestions, type Suggestion, suggestionKey } from '@/lib/commandSuggestions'
 import { isMac } from '@/lib/dom'
 import { COMMAND_BAR_INPUT_ID, focusQuickAdd } from '@/lib/focus'
 import { tryArrowRightToNotepad } from '@/lib/keyboard'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { Category, CategoryId, Tag } from '@/types/domain'
-
-type Suggestion =
-  | { kind: 'project'; id: string; name: string; openCount: number }
-  | { kind: 'create-project'; name: string }
-  | { kind: 'tag'; tag: Tag }
-  | { kind: 'category'; category: Category }
+import type { Category, CategoryId } from '@/types/domain'
+import { SuggestionContent } from './CommandSuggestionItem'
 
 function focusActiveQuickAdd() {
   requestAnimationFrame(focusQuickAdd)
@@ -80,37 +70,10 @@ export function CommandBar() {
     return m
   }, [focusProject])
 
-  const suggestions: Suggestion[] = useMemo(() => {
-    const q = draft.trim().toLowerCase()
-
-    if (!focusProject) {
-      const items: Suggestion[] = projects
-        .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
-        .map((p) => ({
-          kind: 'project',
-          id: p.id,
-          name: p.name,
-          openCount: p.tasks.filter((t) => !t.done).length,
-        }))
-      if (q && !projects.some((p) => p.name.toLowerCase() === q)) {
-        items.push({ kind: 'create-project', name: draft.trim() })
-      }
-      return items
-    }
-
-    const tagItems: Suggestion[] = tags
-      .filter((t) => !activeFilters.tagIds.includes(t.id))
-      .filter((t) => (q ? t.name.toLowerCase().includes(q) : true))
-      .map((t) => ({ kind: 'tag' as const, tag: t }))
-
-    const catItems: Suggestion[] = focusProject.categories
-      .filter((c) => !activeFilters.categoryIds.includes(c.id))
-      .filter((c) => (q ? c.name.toLowerCase().includes(q) : true))
-      .sort((a, b) => a.order - b.order)
-      .map((c) => ({ kind: 'category' as const, category: c }))
-
-    return [...tagItems, ...catItems]
-  }, [draft, focusProject, projects, tags, activeFilters])
+  const suggestions: Suggestion[] = useMemo(
+    () => buildSuggestions({ draft, focusProject, projects, tags, activeFilters }),
+    [draft, focusProject, projects, tags, activeFilters],
+  )
 
   const showSuggestions = isFocused && draft.trim().length > 0
 
@@ -333,49 +296,5 @@ export function CommandBar() {
         </div>
       )}
     </Command>
-  )
-}
-
-function suggestionKey(s: Suggestion): string {
-  if (s.kind === 'project') return `p:${s.id}`
-  if (s.kind === 'create-project') return `cp:${s.name}`
-  if (s.kind === 'tag') return `t:${s.tag.id}`
-  return `c:${s.category.id}`
-}
-
-function SuggestionContent({ suggestion }: { suggestion: Suggestion }) {
-  if (suggestion.kind === 'project') {
-    return (
-      <>
-        <IconArrowRight className="size-3.5 text-muted-foreground" />
-        <span className="font-medium">{suggestion.name}</span>
-        <span className="text-muted-foreground text-xs tabular-nums">
-          {suggestion.openCount} apert{suggestion.openCount === 1 ? 'o' : 'i'}
-        </span>
-      </>
-    )
-  }
-  if (suggestion.kind === 'create-project') {
-    return (
-      <>
-        <span className="font-mono text-muted-foreground">+</span>
-        <span className="text-muted-foreground">crea progetto</span>
-        <span className="font-medium">"{suggestion.name}"</span>
-      </>
-    )
-  }
-  if (suggestion.kind === 'tag') {
-    return (
-      <>
-        <span className="font-mono text-muted-foreground">#</span>
-        <TagBadge tag={suggestion.tag} />
-      </>
-    )
-  }
-  return (
-    <>
-      <span className="font-mono text-muted-foreground">›</span>
-      <span>{suggestion.category.name}</span>
-    </>
   )
 }

@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Notepad } from '@/components/board/Notepad'
 import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
-import { useBoardKeyboard } from '@/hooks/useBoardKeyboard'
 import { useNavModel } from '@/hooks/useBoardNav'
-import { focusCommandBar, focusQuickAdd as focusQuickAddInput } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { ProjectId, Task, TaskId } from '@/types/domain'
+import type { ProjectId } from '@/types/domain'
+import { useBoardSelectionSync } from './useBoardSelectionSync'
+import { useFocusModeKeyboard } from './useFocusModeKeyboard'
+import { useOverviewKeyboard } from './useOverviewKeyboard'
 
 interface BoardViewProps {
   onOpenLog?: (projectId: ProjectId) => void
@@ -18,21 +19,28 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
   const projects = useBoardStore((s) => s.board.projects)
   const tags = useBoardStore((s) => s.board.tags)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
-  const activeFilters = useBoardStore((s) => s.activeFilters)
   const selectedTaskId = useBoardStore((s) => s.selectedTaskId)
   const selectedCategoryId = useBoardStore((s) => s.selectedCategoryId)
-  const setSelectedTaskId = useBoardStore((s) => s.setSelectedTaskId)
-  const setSelectedCategoryId = useBoardStore((s) => s.setSelectedCategoryId)
-  const clearSelection = useBoardStore((s) => s.clearSelection)
-  const clearFocus = useBoardStore((s) => s.clearFocus)
-  const clearFilters = useBoardStore((s) => s.clearFilters)
-  const setFocusProject = useBoardStore((s) => s.setFocusProject)
   const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
-  const setOverviewSelectedProjectId = useBoardStore((s) => s.setOverviewSelectedProjectId)
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
 
   const [notepadExpanded, setNotepadExpanded] = useState(false)
+
+  const sortedTags = useMemo(() => [...tags].sort((a, b) => a.name.localeCompare(b.name)), [tags])
+
+  const focusProject = useMemo(
+    () => (focusProjectId ? (projects.find((p) => p.id === focusProjectId) ?? null) : null),
+    [focusProjectId, projects],
+  )
+
+  const overviewSelectedProject = useMemo(
+    () =>
+      overviewSelectedProjectId
+        ? (projects.find((p) => p.id === overviewSelectedProjectId) ?? null)
+        : null,
+    [projects, overviewSelectedProjectId],
+  )
 
   // richiesta esplicita (freccia → o rail) → espandi e dai focus
   useEffect(() => {
@@ -46,85 +54,7 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     setNotepadExpanded((focusProject?.notes.length ?? 0) > 0)
   }, [focusProjectId])
 
-  const sortedTags = useMemo(() => [...tags].sort((a, b) => a.name.localeCompare(b.name)), [tags])
-
-  const focusProject = useMemo(
-    () => (focusProjectId ? (projects.find((p) => p.id === focusProjectId) ?? null) : null),
-    [focusProjectId, projects],
-  )
-
-  const taskFilter = useCallback(
-    (t: Task) => {
-      if (t.done) return false
-      if (activeFilters.tagIds.length > 0) {
-        const hasAnyTag = t.tagIds.some((id) => activeFilters.tagIds.includes(id))
-        if (!hasAnyTag) return false
-      }
-      if (activeFilters.categoryIds.length > 0) {
-        if (!activeFilters.categoryIds.includes(t.categoryId)) return false
-      }
-      return true
-    },
-    [activeFilters],
-  )
-
-  const visibleTaskIds = useMemo(() => {
-    if (!focusProject) return [] as TaskId[]
-    const ids: TaskId[] = []
-    const sortedCats = [...focusProject.categories].sort((a, b) => a.order - b.order)
-    for (const c of sortedCats) {
-      if (c.collapsed) continue
-      for (const t of focusProject.tasks) {
-        if (t.categoryId !== c.id) continue
-        if (!taskFilter(t)) continue
-        ids.push(t.id)
-      }
-    }
-    return ids
-  }, [focusProject, taskFilter])
-
-  useEffect(() => {
-    if (focusProjectId) {
-      if (selectedTaskId && !visibleTaskIds.includes(selectedTaskId)) {
-        setSelectedTaskId(null)
-      }
-      return
-    }
-    if (!overviewSelectedProjectId) {
-      if (selectedTaskId || selectedCategoryId) clearSelection()
-      return
-    }
-    const proj = projects.find((p) => p.id === overviewSelectedProjectId)
-    if (selectedTaskId && !proj?.tasks.some((t) => t.id === selectedTaskId)) {
-      setSelectedTaskId(null)
-    }
-    if (selectedCategoryId && !proj?.categories.some((c) => c.id === selectedCategoryId)) {
-      setSelectedCategoryId(null)
-    }
-  }, [
-    focusProjectId,
-    overviewSelectedProjectId,
-    projects,
-    visibleTaskIds,
-    selectedTaskId,
-    selectedCategoryId,
-    setSelectedTaskId,
-    setSelectedCategoryId,
-    clearSelection,
-  ])
-
-  const focusQuickAdd = useCallback(() => {
-    clearSelection()
-    focusQuickAddInput()
-  }, [clearSelection])
-
-  const overviewSelectedProject = useMemo(
-    () =>
-      overviewSelectedProjectId
-        ? (projects.find((p) => p.id === overviewSelectedProjectId) ?? null)
-        : null,
-    [projects, overviewSelectedProjectId],
-  )
+  const { taskFilter } = useBoardSelectionSync({ focusProject })
 
   const focusNav = useNavModel(focusProject, taskFilter, selectedTaskId, selectedCategoryId)
   const overviewNav = useNavModel(
@@ -134,122 +64,8 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     selectedCategoryId,
   )
 
-  // --- Navigazione da tastiera: modalità focus ---
-  const focusEscape = useCallback(
-    (e: KeyboardEvent) => {
-      e.preventDefault()
-      if (selectedTaskId || selectedCategoryId) {
-        clearSelection()
-        return
-      }
-      if (activeFilters.tagIds.length > 0 || activeFilters.categoryIds.length > 0) {
-        clearFilters()
-        return
-      }
-      clearFocus()
-    },
-    [selectedTaskId, selectedCategoryId, activeFilters, clearSelection, clearFilters, clearFocus],
-  )
-
-  const focusArrowRight = useCallback(
-    (e: KeyboardEvent) => {
-      e.preventDefault()
-      requestOpenNotepad()
-    },
-    [requestOpenNotepad],
-  )
-
-  useBoardKeyboard({
-    active: !!focusProjectId,
-    projectId: focusProjectId,
-    project: focusProject,
-    navModel: focusNav,
-    selectedTaskId,
-    selectedCategoryId,
-    onArrowRight: focusArrowRight,
-    onArrowUpAtUnselected: focusQuickAdd,
-    onArrowUpAtFirst: focusQuickAdd,
-    onJumpExitTop: focusQuickAdd,
-    onEscape: focusEscape,
-  })
-
-  // --- Navigazione da tastiera: modalità overview ---
-  const overviewHorizontal = useCallback(
-    (e: KeyboardEvent) => {
-      if (!overviewSelectedProjectId || projects.length === 0) return
-      const projIdx = projects.findIndex((p) => p.id === overviewSelectedProjectId)
-      const next = e.key === 'ArrowRight' ? projIdx + 1 : projIdx - 1
-      if (next < 0 || next >= projects.length) return
-      e.preventDefault()
-      setOverviewSelectedProjectId(projects[next].id)
-    },
-    [overviewSelectedProjectId, projects, setOverviewSelectedProjectId],
-  )
-
-  const overviewExitToCommandBar = useCallback(() => {
-    setOverviewSelectedProjectId(null)
-    focusCommandBar()
-  }, [setOverviewSelectedProjectId])
-
-  const overviewEnterUnselected = useCallback(() => {
-    if (!overviewSelectedProjectId) return false
-    setFocusProject(overviewSelectedProjectId)
-    return true
-  }, [overviewSelectedProjectId, setFocusProject])
-
-  const clearSelectedCategory = useCallback(
-    () => setSelectedCategoryId(null),
-    [setSelectedCategoryId],
-  )
-
-  const overviewEscape = useCallback(
-    (e: KeyboardEvent) => {
-      e.preventDefault()
-      if (overviewNav.navIdx !== -1) {
-        clearSelection()
-        return
-      }
-      overviewExitToCommandBar()
-    },
-    [overviewNav.navIdx, clearSelection, overviewExitToCommandBar],
-  )
-
-  useBoardKeyboard({
-    active: !focusProjectId && !!overviewSelectedProjectId,
-    projectId: overviewSelectedProjectId,
-    project: overviewSelectedProject,
-    navModel: overviewNav,
-    selectedTaskId,
-    selectedCategoryId,
-    onArrowLeft: overviewHorizontal,
-    onArrowRight: overviewHorizontal,
-    onArrowUpAtUnselected: overviewExitToCommandBar,
-    onArrowUpAtFirst: clearSelection,
-    onJumpExitTop: clearSelectedCategory,
-    onEnterUnselected: overviewEnterUnselected,
-    onEscape: overviewEscape,
-  })
-
-  useEffect(() => {
-    if (!selectedTaskId) return
-    const el = document.querySelector<HTMLElement>(`[data-task-id="${selectedTaskId}"]`)
-    el?.scrollIntoView({ block: 'nearest' })
-  }, [selectedTaskId])
-
-  useEffect(() => {
-    if (!selectedCategoryId) return
-    const el = document.querySelector<HTMLElement>(`[data-category-id="${selectedCategoryId}"]`)
-    el?.scrollIntoView({ block: 'nearest' })
-  }, [selectedCategoryId])
-
-  useEffect(() => {
-    if (focusProjectId) return
-    if (!overviewSelectedProjectId) return
-    const el = document.querySelector<HTMLElement>(
-      `[data-project-id="${overviewSelectedProjectId}"]`,
-    )
-    el?.scrollIntoView({ block: 'nearest' })
-  }, [overviewSelectedProjectId, focusProjectId])
+  useFocusModeKeyboard({ focusProjectId, focusProject, navModel: focusNav })
+  useOverviewKeyboard({ focusProjectId, overviewSelectedProject, navModel: overviewNav })
 
   const noTagsHint = tags.length === 0
   const noProjects = projects.length === 0
