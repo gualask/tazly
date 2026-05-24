@@ -15,7 +15,7 @@ import type { ProjectId } from '@/types/domain'
 
 type View = 'board' | 'tags' | 'log'
 
-export function NewTab() {
+export function App() {
   const [view, setView] = useState<View>('board')
   const [logFilterProjectId, setLogFilterProjectId] = useState<ProjectId | null>(null)
   const [showHelp, setShowHelp] = useState(false)
