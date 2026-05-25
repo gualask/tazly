@@ -82,7 +82,7 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
   if (editing) {
     return (
       // biome-ignore lint/a11y/noStaticElementInteractions: onBlur traccia l'uscita del focus per annullare l'edit, non è un target interattivo
-      <div className="flex flex-col gap-2 rounded-md border bg-card p-2" onBlur={onContainerBlur}>
+      <div className="flex flex-col gap-2 rounded-md border bg-muted p-2" onBlur={onContainerBlur}>
         <div className="flex items-center gap-2">
           <Input
             value={title}

@@ -26,9 +26,14 @@
   --destructive: oklch(0.62 0.22 27);
   --destructive-foreground: oklch(0.985 0 0);
 
+  /* Azione primaria: accent indigo-violet che si stacca dal vetro (PRODUCT principio 6) */
+  --accent-action: oklch(0.52 0.23 280);
+  --accent-action-hover: oklch(0.58 0.22 280);
+  --accent-action-foreground: oklch(0.985 0 0);
+
   --border: oklch(0 0 0 / 0.08);
   --input: oklch(0 0 0 / 0.06);
-  --ring: oklch(0.6 0.12 250 / 0.5);
+  --ring: oklch(0.6 0.14 280 / 0.5);
 
   --radius: 1rem;
 
@@ -71,9 +76,13 @@
   --destructive: oklch(0.7 0.2 22);
   --destructive-foreground: oklch(0.985 0 0);
 
+  --accent-action: oklch(0.62 0.22 280);
+  --accent-action-hover: oklch(0.68 0.2 280);
+  --accent-action-foreground: oklch(0.985 0 0);
+
   --border: oklch(1 0 0 / 0.1);
   --input: oklch(1 0 0 / 0.08);
-  --ring: oklch(0.7 0.14 250 / 0.6);
+  --ring: oklch(0.7 0.16 280 / 0.6);
 
   --highlight: oklch(1 0 0 / 0.12);
   --shadow-spatial:
@@ -107,6 +116,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-action: var(--accent-action);
+  --color-accent-action-hover: var(--accent-action-hover);
+  --color-accent-action-foreground: var(--accent-action-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -161,6 +173,21 @@
   }
 }
 
+/* Vetro opaco quando l'utente riduce la trasparenza: meno carico GPU e più leggibilità */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-strong {
+    background-color: var(--background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .glass-bar {
+    background-color: var(--background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
 @keyframes task-highlight {
   0% {
     background-color: oklch(0.85 0.12 90);
@@ -170,8 +197,13 @@
   }
 }
 
-.animate-task-highlight {
-  animation: task-highlight 1.6s ease-out;
+@media (prefers-reduced-motion: no-preference) {
+  .animate-task-highlight {
+    animation: task-highlight 1.6s ease-out;
+  }
+  .animate-task-copied {
+    animation: task-copied 0.6s ease-out;
+  }
 }
 
 @keyframes task-copied {
@@ -181,8 +213,4 @@
   100% {
     background-color: transparent;
   }
-}
-
-.animate-task-copied {
-  animation: task-copied 0.6s ease-out;
 }

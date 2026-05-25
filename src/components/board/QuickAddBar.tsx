@@ -47,7 +47,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
             onChange={(e) => qa.setCategoryDraft(e.target.value)}
             onKeyDown={qa.handleCategoryKey}
             placeholder="Categoria…"
-            className="h-7 min-w-32 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            className="h-7 min-w-32 flex-1 rounded bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground focus:bg-foreground/5"
           />
         )}
 
@@ -71,7 +71,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
               onChange={(e) => qa.setTitleDraft(e.target.value)}
               onKeyDown={qa.handleTitleKey}
               placeholder="Testo del task…"
-              className="h-7 min-w-40 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              className="h-7 min-w-40 flex-1 rounded bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground focus:bg-foreground/5"
             />
           ) : null)}
 
@@ -102,7 +102,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
                 onChange={(e) => qa.setTagDraft(e.target.value)}
                 onKeyDown={qa.handleTagKey}
                 placeholder={qa.selectedTagIds.length === 0 ? 'Tag…' : '+ tag'}
-                className="h-7 min-w-24 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                className="h-7 min-w-24 flex-1 rounded bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground focus:bg-foreground/5"
               />
             )}
           </>
