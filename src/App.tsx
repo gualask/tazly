@@ -122,8 +122,10 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Hint k="↵" label="conferma / edit" />
         <Hint k="↑↓" label="naviga elementi" />
         <Hint k="⇧↑↓" label="salta categoria" />
+        <Hint k="␣" label="completa / comprimi" />
         <Hint k="→" label="note" />
         <Hint k="⌘C" label="copia task" />
+        <Hint k="⌘Z" label="annulla chiusura" />
         <Hint k="esc" label="annulla" />
         <Hint k="tab" label="inserisci task" />
         <Hint k="⌘K" label="reset / focus bar" />

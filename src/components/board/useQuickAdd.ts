@@ -87,15 +87,10 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
     if (step === 'tags') tagRef.current?.focus()
   }, [step, active])
 
-  function reset(keepCategory: boolean) {
-    if (!keepCategory) {
-      setLockedCategoryId(null)
-      setLockedCategoryName(null)
-      setCategoryDraft('')
-      setStep('category')
-    } else {
-      setStep('title')
-    }
+  // Dopo aver creato un task: tiene la categoria bloccata e riparte dallo step titolo
+  // per inserire rapidamente il task successivo nella stessa categoria.
+  function resetForNextTask() {
+    setStep('title')
     setTitleDraft('')
     setLockedTitle(null)
     setTagDraft('')
@@ -122,7 +117,7 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
     if (newTaskId) onTaskCreated?.(catId, newTaskId)
     setLockedCategoryId(catId)
     setLockedCategoryName(parsed.categoryName)
-    reset(true)
+    resetForNextTask()
     return true
   }
 
@@ -180,12 +175,11 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       e.preventDefault()
       setActiveIdx((i) => Math.max(i - 1, 0))
     } else if (e.key === 'Escape') {
-      e.preventDefault()
-      if (!categoryDraft) {
-        focusCommandBar()
-        return
+      // Esc = annulla, non naviga: ↑ e ⌘K servono a risalire alla CommandBar
+      if (categoryDraft) {
+        e.preventDefault()
+        setCategoryDraft('')
       }
-      reset(false)
     }
   }
 
@@ -219,7 +213,16 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       setLockedTitle(titleDraft.trim())
       setStep('tags')
     } else if (e.key === 'Escape') {
-      reset(false)
+      e.preventDefault()
+      if (titleDraft) {
+        setTitleDraft('')
+        return
+      }
+      // campo vuoto: passo indietro allo step categoria
+      setCategoryDraft(lockedCategoryName ?? '')
+      setLockedCategoryId(null)
+      setLockedCategoryName(null)
+      setStep('category')
     }
   }
 
@@ -236,7 +239,7 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       tagIds: selectedTagIds,
     })
     if (taskId) onTaskCreated?.(lockedCategoryId, taskId)
-    reset(true)
+    resetForNextTask()
   }
 
   function handleTagKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -246,17 +249,7 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       focusCommandBar()
       return
     }
-    if (e.key === 'ArrowRight') {
-      const el = e.currentTarget
-      const atEnd =
-        (el.selectionStart ?? 0) === el.value.length && (el.selectionEnd ?? 0) === el.value.length
-      if (atEnd) {
-        e.preventDefault()
-        el.blur()
-        requestOpenNotepad()
-        return
-      }
-    }
+    if (tryArrowRightToNotepad(e, e.currentTarget, requestOpenNotepad)) return
     if (e.key === 'Tab' && !e.shiftKey) {
       if (tagSuggestions.length === 0) return
       e.preventDefault()
@@ -288,7 +281,15 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       e.preventDefault()
       setActiveIdx((i) => Math.max(i - 1, 0))
     } else if (e.key === 'Escape') {
-      reset(false)
+      e.preventDefault()
+      if (tagDraft) {
+        setTagDraft('')
+        return
+      }
+      // campo vuoto: passo indietro allo step titolo (i tag selezionati restano)
+      setTitleDraft(lockedTitle ?? '')
+      setLockedTitle(null)
+      setStep('title')
     }
   }
 

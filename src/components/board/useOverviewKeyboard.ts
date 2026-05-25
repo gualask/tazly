@@ -63,6 +63,11 @@ export function useOverviewKeyboard(args: {
     [navModel.navIdx, clearSelection, exitToCommandBar],
   )
 
+  // Uscita verso l'alto a due stadi (intenzionale): a differenza della modalità focus
+  // — dove sopra la board c'è la QuickAdd come atterraggio intermedio — qui lasciare la
+  // board significa saltare fino alla CommandBar. Quindi ↑/⇧↑ con selezione prima
+  // deselezionano (restando nella board), e solo ↑ da già-deselezionato esce davvero.
+  // Fa da guardia contro l'uscita accidentale per una freccia di troppo.
   useBoardKeyboard({
     active: !focusProjectId && !!overviewSelectedProjectId,
     projectId: overviewSelectedProjectId,
