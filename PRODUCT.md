@@ -1,8 +1,6 @@
 # Product
 
-## Register
-
-product
+> Spec di prodotto e design di Tazly: target user, scopo, personalità di brand, principi di design e accessibilità. È l'input di contesto per la skill **impeccable** e per chi progetta l'interfaccia — **non** è documentazione utente (quella sta nel [README](./README.md)) né guida di sviluppo (vedi [`docs/DEVELOPMENT.md`](./docs/DEVELOPMENT.md)).
 
 ## Users
 

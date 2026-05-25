@@ -32,7 +32,7 @@ L'estensione si carica come "unpacked" da `chrome://extensions`. Esistono due mo
 
 1. `pnpm dev` — Vite gira su `localhost:5173`. **Non aprire** quell'URL nel browser come app normale (è solo per servire i moduli all'estensione).
 2. In `chrome://extensions` → "Load unpacked" → seleziona `dist/`. CRX rigenera `dist/` ogni volta che `pnpm dev` parte.
-3. Apri una nuova scheda → Tazly.
+3. Click sull'icona **Tazly** nella toolbar → si apre la tab dell'app (il service worker la apre on-demand).
 4. Modifiche a `.tsx` / `.css` / store: HMR aggiorna la scheda automaticamente.
 5. Modifiche a `manifest.ts` / `vite.config.ts` / `package.json`: ferma `pnpm dev`, rilancia, poi ⟳ Reload sull'estensione in `chrome://extensions`.
 
@@ -68,42 +68,71 @@ Entrambi:
 ```
 src/
 ├── components/
-│   ├── board/                 # tutto ciò che riguarda la board
-│   │   ├── BoardView.tsx      # root: griglia o focus mode, filtri
-│   │   ├── ProjectCard.tsx    # card progetto con quick-add + categorie
-│   │   ├── CategoryBlock.tsx  # categoria collassabile + task list
-│   │   ├── TaskRow.tsx        # task con checkbox, tag, edit inline
-│   │   ├── QuickAddBar.tsx    # barra di inserimento Tab-step + sintassi rapida
-│   │   ├── FilterBar.tsx      # filtri stato + tag
-│   │   └── ProjectSidebar.tsx # sidebar in focus mode
+│   ├── board/                      # tutto ciò che riguarda la board
+│   │   ├── BoardView.tsx           # root: griglia (overview) o focus mode, filtri
+│   │   ├── CommandBar.tsx          # search/azioni globali + breadcrumb focus + filtri
+│   │   ├── CommandSuggestionItem.tsx
+│   │   ├── ProjectCard.tsx         # card progetto con quick-add + categorie
+│   │   ├── CategoryBlock.tsx       # categoria collassabile + task list
+│   │   ├── TaskRow.tsx             # task con checkbox, tag, edit inline
+│   │   ├── QuickAddBar.tsx         # UI barra di inserimento (step categoria→titolo→tag)
+│   │   ├── QuickAddDropdown.tsx    # dropdown autocomplete della quick-add
+│   │   ├── Notepad.tsx             # note per-progetto (textarea laterale)
+│   │   ├── NotepadTab.tsx          # tab/toggle del notepad
+│   │   ├── useQuickAdd.ts          # macchina a step + gestione tastiera della quick-add
+│   │   ├── useBoardSelectionSync.ts# tiene coerente la selezione al variare del contenuto
+│   │   ├── useFocusModeKeyboard.ts # cablaggio tastiera in focus mode
+│   │   └── useOverviewKeyboard.ts  # cablaggio tastiera in overview
 │   ├── tags/
-│   │   ├── TagsView.tsx       # gestione tag (CRUD + riordina)
-│   │   └── TagBadge.tsx       # rendering badge colorato
+│   │   ├── TagsView.tsx            # gestione tag (CRUD + riordina)
+│   │   └── TagBadge.tsx            # rendering badge colorato
+│   ├── log/
+│   │   └── LogView.tsx             # vista log/attività
 │   ├── common/
-│   │   └── EmptyState.tsx
-│   └── ui/                    # primitivi shadcn-style (Button, Input)
+│   │   ├── EmptyState.tsx
+│   │   └── IconButton.tsx
+│   └── ui/                         # primitivi shadcn-style scritti a mano
+├── hooks/
+│   ├── useBoardKeyboard.ts         # navigazione verticale condivisa focus/overview
+│   ├── useBoardNav.ts              # modello di navigazione (nav items, indice, salti)
+│   ├── useGlobalHotkeys.ts         # ?, ⌘C copia, ⌘Z undo, ⌘K reset
+│   └── useTheme.ts
 ├── store/
-│   └── useBoardStore.ts       # Zustand + persist su chrome.storage.local
+│   ├── useBoardStore.ts            # compone le slice + persist su chrome.storage.local
+│   ├── types.ts                    # tipi dello store e delle slice
+│   ├── helpers.ts                  # utility condivise tra slice
+│   └── slices/                     # projectSlice, categorySlice, taskSlice,
+│                                   #   tagSlice, focusSlice, uiSlice
 ├── lib/
-│   ├── storage.ts             # adapter chrome.storage / localStorage
-│   ├── colors.ts              # palette TAG_COLORS (10 colori, classi Tailwind)
-│   ├── id.ts                  # wrapper crypto.randomUUID
-│   └── utils.ts               # cn() per Tailwind class merge
+│   ├── storage.ts                  # adapter chrome.storage / localStorage
+│   ├── focus.ts                    # helper per spostare il focus (CommandBar, QuickAdd)
+│   ├── keyboard.ts                 # helper tastiera condivisi (es. → al notepad)
+│   ├── dom.ts                      # isEditableTarget, isMac
+│   ├── quickAddParse.ts            # parser della sintassi rapida `Cat: testo #tag`
+│   ├── commandSuggestions.ts       # costruzione suggerimenti della CommandBar
+│   ├── colors.ts                   # palette TAG_COLORS (classi Tailwind)
+│   ├── id.ts                       # wrapper crypto.randomUUID
+│   └── utils.ts                    # cn() per Tailwind class merge
 ├── types/
-│   └── domain.ts              # Board, Project, Category, Task, Tag
-├── manifest.ts                # manifest MV3 per CRX plugin
-├── NewTab.tsx                 # entry component (tab Board/Tag + dev reset)
-├── main.tsx                   # createRoot
-└── index.css                  # Tailwind import + custom keyframes
+│   └── domain.ts                   # Board, Project, Category, Task, Tag (branded IDs)
+├── manifest.ts                     # manifest MV3 per CRX plugin (action + service worker)
+├── background.ts                   # service worker: apre Tazly full-tab on-demand
+├── App.tsx                         # root component (tab Board/Tag/Log + dev reset)
+├── main.tsx                        # createRoot
+└── index.css                       # Tailwind import + custom keyframes
 ```
 
 ### Store
 
-- Singolo store globale (`useBoardStore`)
-- Stato: `{ board: { projects: Project[], tags: Tag[] } }`
-- Actions immutabili (niente Immer, manual spread)
-- Validazioni: trim del nome, niente duplicati case-insensitive su tag e categorie nello stesso progetto
-- `addProject` / `addCategory` / `addTask` ritornano l'id creato (usato da `QuickAddBar` per highlight e auto-expand)
+- Store globale `useBoardStore`, composto da **slice** (`store/slices/`): una per dominio (progetti, categorie, task, tag, focus, UI). `useBoardStore.ts` le assembla e applica il middleware `persist`.
+- Stato principale: `{ board: { projects: Project[], tags: Tag[] } }`, più lo stato di UI/navigazione (focus, selezione, filtri, editing).
+- Actions immutabili (niente Immer, manual spread).
+- Validazioni: trim del nome, niente duplicati case-insensitive su tag e categorie nello stesso progetto.
+- `addProject` / `addCategory` / `addTask` ritornano l'id creato (usato dalla quick-add per highlight e auto-expand).
+
+### Apertura dell'app (action + service worker)
+
+Tazly **non** è più un override della New Tab. È una pagina full-tab (`index.html`) aperta on-demand: `background.ts` è un service worker che al click sull'icona della toolbar (`chrome.action.onClicked`) focalizza la tab già aperta se esiste, altrimenti ne crea una nuova. Il manifest dichiara quindi `action` + `background.service_worker`.
 
 ### Persistenza
 
@@ -113,12 +142,14 @@ src/
 
 ### Quick-add: macchina a step
 
-`QuickAddBar` tiene state `step: 'category' | 'title' | 'tags'` e per ogni step:
+La logica vive nell'hook `useQuickAdd` (`components/board/useQuickAdd.ts`); `QuickAddBar` ne è la sola UI. L'hook tiene state `step: 'category' | 'title' | 'tags'` e per ogni step:
 - input controllato + dropdown autocomplete
-- gestione tastiera: `Tab` / `Shift+Tab` / `Backspace` su input vuoto / `↑↓` / `Invio` / `Esc`
+- gestione tastiera: `Tab` / `Shift+Tab` / `Backspace` su input vuoto / `↑↓` / `Invio` / `Esc` (vedi [`KEYBINDINGS.md`](./KEYBINDINGS.md))
 - transizione step ⇒ focus automatico sull'input corretto via `useRef`
 
-Sintassi rapida `Cat: testo #tag1 #tag2` parsata via regex `/^([^:]+):\s*(.+?)(?:\s+(#\S+(?:\s+#\S+)*))?$/`. Si attiva solo se l'utente preme `Invio` mentre digita nel campo categoria e l'input contiene `:`.
+Sintassi rapida `Cat: testo #tag1 #tag2` parsata in `lib/quickAddParse.ts`. Si attiva solo se l'utente preme `Invio` mentre digita nel campo categoria e l'input contiene `:`.
+
+> La navigazione da tastiera dell'intera board è documentata a parte in [`KEYBINDINGS.md`](./KEYBINDINGS.md): hook condiviso `useBoardKeyboard` + cablaggi `useFocusModeKeyboard` / `useOverviewKeyboard`, più le hotkey globali in `useGlobalHotkeys`.
 
 ## Convenzioni di codice
 
@@ -135,11 +166,12 @@ Per un check rapido senza caricare l'estensione, l'app gira anche direttamente s
 ## Build di produzione
 
 `pnpm build` produce `dist/` con:
-- `manifest.json` MV3 senza service worker e senza riferimenti a localhost
+- `manifest.json` MV3 (con `action` + `background.service_worker`) senza riferimenti a localhost
 - `index.html` + assets bundle
+- `background.js` (service worker che apre l'app on-demand)
 - `icons/` copiate da `public/`
 
-Il bundle è ~80 KB gzippato. Niente service worker = niente Status 3 in produzione.
+In produzione il service worker non referenzia `localhost`, quindi si registra senza errori (vedi Troubleshooting per lo Status 3 in dev).
 
 ## Troubleshooting
 
