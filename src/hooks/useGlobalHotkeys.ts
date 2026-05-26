@@ -9,6 +9,8 @@ interface Options {
   onToggleLog: () => void
   /** Toggle della gestione tag: apre se sulla board, chiude se già nei tag. */
   onToggleTags: () => void
+  /** Toggle del tema chiaro/scuro. */
+  onToggleTheme: () => void
   /** Esc: torna alla board da una vista secondaria (attivo solo quando `inOverlay`). */
   onLeaveOverlay: () => void
   /** True quando è attiva una vista secondaria (log o tag). */
@@ -20,36 +22,37 @@ export function useGlobalHotkeys({
   onToggleHelp,
   onToggleLog,
   onToggleTags,
+  onToggleTheme,
   onLeaveOverlay,
   inOverlay,
   resetEnabled,
 }: Options) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
       const st = useBoardStore.getState()
+
+      // Azioni globali con Option/Alt: funzionano ovunque, anche dentro gli input.
+      // Si matcha su e.code perché su macOS Option+lettera produce caratteri speciali in e.key.
+      if (e.altKey && !e.metaKey && !e.ctrlKey) {
+        // non scartare una rinomina inline in corso (i wrapper annullano l'edit su blur)
+        if (st.editingTaskId || st.editingCategoryId) return
+        const action = (
+          {
+            KeyL: onToggleLog,
+            KeyT: onToggleTags,
+            KeyD: onToggleTheme,
+            KeyH: onToggleHelp,
+          } as Record<string, (() => void) | undefined>
+        )[e.code]
+        if (action) {
+          e.preventDefault()
+          action()
+        }
+        return
+      }
+
+      if (e.metaKey || e.ctrlKey) return
       if (st.editingTaskId || st.editingCategoryId) return
-
-      if (e.key === '?') {
-        if (isEditableTarget(e.target)) return
-        e.preventDefault()
-        onToggleHelp()
-        return
-      }
-
-      if (e.key === 'l' || e.key === 'L') {
-        if (isEditableTarget(e.target)) return
-        e.preventDefault()
-        onToggleLog()
-        return
-      }
-
-      if (e.key === 't' || e.key === 'T') {
-        if (isEditableTarget(e.target)) return
-        e.preventDefault()
-        onToggleTags()
-        return
-      }
 
       if (e.key === 'Escape' && inOverlay) {
         if (isEditableTarget(e.target)) return
@@ -92,7 +95,7 @@ export function useGlobalHotkeys({
       window.removeEventListener('keydown', onCopy)
       window.removeEventListener('keydown', onUndo)
     }
-  }, [onToggleHelp, onToggleLog, onToggleTags, onLeaveOverlay, inOverlay])
+  }, [onToggleHelp, onToggleLog, onToggleTags, onToggleTheme, onLeaveOverlay, inOverlay])
 
   useEffect(() => {
     if (!resetEnabled) return

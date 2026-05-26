@@ -49,6 +49,7 @@ export function App() {
       }
     },
     onToggleTags: () => setView(view === 'tags' ? 'board' : 'tags'),
+    onToggleTheme: toggleTheme,
     onLeaveOverlay: leaveToBoard,
     inOverlay: view !== 'board',
     resetEnabled: view === 'board',
@@ -70,7 +71,7 @@ export function App() {
                   setView('log')
                 }
               }}
-              tooltip="Storico completati"
+              tooltip="Storico completati (⌥L)"
               className="size-7"
             >
               <IconHistory />
@@ -78,7 +79,7 @@ export function App() {
             <IconButton
               variant={view === 'tags' ? 'secondary' : 'ghost'}
               onClick={() => setView(view === 'tags' ? 'board' : 'tags')}
-              tooltip="Gestione tag"
+              tooltip="Gestione tag (⌥T)"
               className="size-7"
             >
               <IconTag />
@@ -86,7 +87,7 @@ export function App() {
             <IconButton
               variant="ghost"
               onClick={toggleTheme}
-              tooltip={theme === 'dark' ? 'Tema chiaro' : 'Tema scuro'}
+              tooltip={`${theme === 'dark' ? 'Tema chiaro' : 'Tema scuro'} (⌥D)`}
               className="size-7"
             >
               {theme === 'dark' ? <IconSun /> : <IconMoon />}
@@ -95,7 +96,7 @@ export function App() {
               type="button"
               onClick={() => setShowHelp((v) => !v)}
               className="rounded border border-transparent px-1.5 py-0.5 font-mono text-muted-foreground text-xs hover:border-border"
-              title="Shortcut (?)"
+              title="Aiuto (⌥H)"
             >
               ?
             </button>
@@ -141,14 +142,15 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Hint k="⇧↑↓" label="salta categoria" />
         <Hint k="␣" label="completa / comprimi" />
         <Hint k="→" label="note" />
-        <Hint k="L" label="apri / chiudi storico" />
-        <Hint k="T" label="apri / chiudi tag" />
+        <Hint k="⌥L" label="apri / chiudi storico" />
+        <Hint k="⌥T" label="apri / chiudi tag" />
+        <Hint k="⌥D" label="tema chiaro / scuro" />
+        <Hint k="⌥H" label="aiuto" />
         <Hint k="⌘C" label="copia task" />
         <Hint k="⌘Z" label="annulla chiusura" />
         <Hint k="esc" label="annulla" />
         <Hint k="tab" label="inserisci task" />
         <Hint k="⌘K" label="reset / focus bar" />
-        <Hint k="?" label="aiuto" />
         <button
           type="button"
           onClick={onClose}
