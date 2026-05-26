@@ -1,7 +1,9 @@
 export const COMMAND_BAR_INPUT_ID = 'tazly-command-bar-input'
+export const COMMAND_BAR_INPUT_ATTR = 'data-tazly-command-input'
 
 export function focusCommandBar() {
-  const el = document.getElementById(COMMAND_BAR_INPUT_ID) as HTMLInputElement | null
+  // cmdk sovrascrive la prop `id` dell'input, quindi ci ancoriamo a un data-attribute inoltrato.
+  const el = document.querySelector<HTMLInputElement>(`[${COMMAND_BAR_INPUT_ATTR}]`)
   el?.focus()
 }
 

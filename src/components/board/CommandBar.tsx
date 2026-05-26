@@ -7,7 +7,7 @@ import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { buildSuggestions, type Suggestion, suggestionKey } from '@/lib/commandSuggestions'
 import { isMac } from '@/lib/dom'
-import { COMMAND_BAR_INPUT_ID, focusQuickAdd } from '@/lib/focus'
+import { COMMAND_BAR_INPUT_ATTR, COMMAND_BAR_INPUT_ID, focusQuickAdd } from '@/lib/focus'
 import { tryArrowRightToNotepad } from '@/lib/keyboard'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -248,6 +248,7 @@ export function CommandBar() {
         <CommandPrimitive.Input
           ref={inputRef}
           id={COMMAND_BAR_INPUT_ID}
+          {...{ [COMMAND_BAR_INPUT_ATTR]: '' }}
           value={draft}
           onValueChange={(v) => {
             setDraft(v)
