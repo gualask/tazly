@@ -216,14 +216,18 @@ export function ProjectCard({
                 e.stopPropagation()
                 onOpenLog?.(project.id)
               }}
-              className="group/progress h-1 w-full overflow-hidden rounded-full bg-foreground/10"
-              title="Vedi completati"
-              aria-label={`${doneCount} di ${totalCount} completati — vedi log`}
+              // padding verticale per allargare l'area cliccabile mantenendo la barra sottile;
+              // il margine negativo riassorbe l'altezza extra nel layout
+              className="group/progress -my-1 flex w-full items-center rounded-sm py-1.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+              title="Vedi completati (L)"
+              aria-label={`${doneCount} di ${totalCount} completati — apri lo storico`}
             >
-              <div
-                className="h-full rounded-full bg-foreground/40 transition-[width,background-color] duration-300 group-hover/progress:bg-foreground/70"
-                style={{ width: `${progressPct}%` }}
-              />
+              <span className="h-1 w-full overflow-hidden rounded-full bg-foreground/10">
+                <span
+                  className="block h-full rounded-full bg-foreground/40 transition-[width,background-color] duration-300 group-hover/progress:bg-foreground/70"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </span>
             </button>
           ) : (
             <div className="h-1 w-full overflow-hidden rounded-full bg-foreground/10">

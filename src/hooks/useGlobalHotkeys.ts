@@ -5,10 +5,25 @@ import { useBoardStore } from '@/store/useBoardStore'
 
 interface Options {
   onToggleHelp: () => void
+  /** Toggle dello storico: apre se sulla board, chiude se già nel log. */
+  onToggleLog: () => void
+  /** Toggle della gestione tag: apre se sulla board, chiude se già nei tag. */
+  onToggleTags: () => void
+  /** Esc: torna alla board da una vista secondaria (attivo solo quando `inOverlay`). */
+  onLeaveOverlay: () => void
+  /** True quando è attiva una vista secondaria (log o tag). */
+  inOverlay: boolean
   resetEnabled: boolean
 }
 
-export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
+export function useGlobalHotkeys({
+  onToggleHelp,
+  onToggleLog,
+  onToggleTags,
+  onLeaveOverlay,
+  inOverlay,
+  resetEnabled,
+}: Options) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return
@@ -19,6 +34,27 @@ export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
         if (isEditableTarget(e.target)) return
         e.preventDefault()
         onToggleHelp()
+        return
+      }
+
+      if (e.key === 'l' || e.key === 'L') {
+        if (isEditableTarget(e.target)) return
+        e.preventDefault()
+        onToggleLog()
+        return
+      }
+
+      if (e.key === 't' || e.key === 'T') {
+        if (isEditableTarget(e.target)) return
+        e.preventDefault()
+        onToggleTags()
+        return
+      }
+
+      if (e.key === 'Escape' && inOverlay) {
+        if (isEditableTarget(e.target)) return
+        e.preventDefault()
+        onLeaveOverlay()
       }
     }
 
@@ -56,7 +92,7 @@ export function useGlobalHotkeys({ onToggleHelp, resetEnabled }: Options) {
       window.removeEventListener('keydown', onCopy)
       window.removeEventListener('keydown', onUndo)
     }
-  }, [onToggleHelp])
+  }, [onToggleHelp, onToggleLog, onToggleTags, onLeaveOverlay, inOverlay])
 
   useEffect(() => {
     if (!resetEnabled) return

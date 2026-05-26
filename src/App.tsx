@@ -20,6 +20,8 @@ export function App() {
   const [logFilterProjectId, setLogFilterProjectId] = useState<ProjectId | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const resetBoard = useBoardStore((s) => s.resetBoard)
+  const focusProjectId = useBoardStore((s) => s.focusProjectId)
+  const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
   const { theme, toggleTheme } = useTheme()
 
   function openLogForProject(projectId: ProjectId) {
@@ -27,13 +29,28 @@ export function App() {
     setView('log')
   }
 
-  function leaveLog() {
+  function leaveToBoard() {
     setLogFilterProjectId(null)
     setView('board')
   }
 
   useGlobalHotkeys({
     onToggleHelp: () => setShowHelp((v) => !v),
+    onToggleLog: () => {
+      if (view === 'log') {
+        leaveToBoard()
+        return
+      }
+      const activeProjectId = focusProjectId ?? overviewSelectedProjectId
+      if (activeProjectId) openLogForProject(activeProjectId)
+      else {
+        setLogFilterProjectId(null)
+        setView('log')
+      }
+    },
+    onToggleTags: () => setView(view === 'tags' ? 'board' : 'tags'),
+    onLeaveOverlay: leaveToBoard,
+    inOverlay: view !== 'board',
     resetEnabled: view === 'board',
   })
 
@@ -47,7 +64,7 @@ export function App() {
               variant={view === 'log' ? 'secondary' : 'ghost'}
               onClick={() => {
                 if (view === 'log') {
-                  leaveLog()
+                  leaveToBoard()
                 } else {
                   setLogFilterProjectId(null)
                   setView('log')
@@ -124,6 +141,8 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Hint k="⇧↑↓" label="salta categoria" />
         <Hint k="␣" label="completa / comprimi" />
         <Hint k="→" label="note" />
+        <Hint k="L" label="apri / chiudi storico" />
+        <Hint k="T" label="apri / chiudi tag" />
         <Hint k="⌘C" label="copia task" />
         <Hint k="⌘Z" label="annulla chiusura" />
         <Hint k="esc" label="annulla" />
