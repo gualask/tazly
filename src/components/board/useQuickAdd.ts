@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef } from 'react'
 
 import { focusCommandBar } from '@/lib/focus'
 import { tryArrowRightToNotepad } from '@/lib/keyboard'
-import { parseRapidInput } from '@/lib/quickAddParse'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { CategoryId, Project, Tag, TagId } from '@/types/domain'
+import { initialQuickAddState, quickAddReducer } from './quickAddReducer'
 
-export type QuickAddStep = 'category' | 'title' | 'tags'
+export type { QuickAddStep } from './quickAddReducer'
 
 export interface CategorySuggestion {
   kind: 'existing' | 'create'
@@ -28,15 +28,18 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
   const setSelectedCategoryId = useBoardStore((s) => s.setSelectedCategoryId)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
 
-  const [step, setStep] = useState<QuickAddStep>('category')
-  const [categoryDraft, setCategoryDraft] = useState('')
-  const [lockedCategoryId, setLockedCategoryId] = useState<CategoryId | null>(null)
-  const [lockedCategoryName, setLockedCategoryName] = useState<string | null>(null)
-  const [titleDraft, setTitleDraft] = useState('')
-  const [lockedTitle, setLockedTitle] = useState<string | null>(null)
-  const [tagDraft, setTagDraft] = useState('')
-  const [selectedTagIds, setSelectedTagIds] = useState<TagId[]>([])
-  const [activeIdx, setActiveIdx] = useState(0)
+  const [state, dispatch] = useReducer(quickAddReducer, initialQuickAddState)
+  const {
+    step,
+    categoryDraft,
+    lockedCategoryId,
+    lockedCategoryName,
+    titleDraft,
+    lockedTitle,
+    tagDraft,
+    selectedTagIds,
+    activeIdx,
+  } = state
 
   const categoryRef = useRef<HTMLInputElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -68,12 +71,7 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       .filter((t) => (q ? t.name.toLowerCase().includes(q) : true))
   }, [tagDraft, allTags, selectedTagIds])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset highlight whenever step/input changes
-  useEffect(() => {
-    setActiveIdx(0)
-  }, [step, categoryDraft, tagDraft])
-
-  const prevStepRef = useRef<QuickAddStep | null>(null)
+  const prevStepRef = useRef<typeof step | null>(null)
   useEffect(() => {
     if (!active) {
       prevStepRef.current = null
@@ -87,52 +85,14 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
     if (step === 'tags') tagRef.current?.focus()
   }, [step, active])
 
-  // Dopo aver creato un task: tiene la categoria bloccata e riparte dallo step titolo
-  // per inserire rapidamente il task successivo nella stessa categoria.
-  function resetForNextTask() {
-    setStep('title')
-    setTitleDraft('')
-    setLockedTitle(null)
-    setTagDraft('')
-    setSelectedTagIds([])
-  }
-
-  function tryRapidParse(input: string): boolean {
-    const parsed = parseRapidInput(input, { categories: sortedCategories, tags: allTags })
-    if (!parsed) return false
-
-    let catId =
-      sortedCategories.find((c) => c.name.toLowerCase() === parsed.categoryName.toLowerCase())
-        ?.id ?? null
-    if (!catId) {
-      catId = addCategory(project.id, parsed.categoryName)
-    }
-    if (!catId) return false
-
-    const newTaskId = addTask(project.id, {
-      title: parsed.title,
-      categoryId: catId,
-      tagIds: parsed.tagIds,
-    })
-    if (newTaskId) onTaskCreated?.(catId, newTaskId)
-    setLockedCategoryId(catId)
-    setLockedCategoryName(parsed.categoryName)
-    resetForNextTask()
-    return true
-  }
-
   function confirmCategorySuggestion(s: CategorySuggestion) {
     if (s.kind === 'create') {
       const id = addCategory(project.id, s.name)
       if (!id) return
-      setLockedCategoryId(id)
-      setLockedCategoryName(s.name)
+      dispatch({ type: 'CONFIRM_CATEGORY', id, name: s.name })
     } else if (s.id) {
-      setLockedCategoryId(s.id)
-      setLockedCategoryName(s.name)
+      dispatch({ type: 'CONFIRM_CATEGORY', id: s.id, name: s.name })
     }
-    setCategoryDraft('')
-    setStep('title')
   }
 
   function handleCategoryKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -157,28 +117,22 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
     }
     if (tryArrowRightToNotepad(e, e.currentTarget, requestOpenNotepad)) return
     if (e.key === 'Tab' || e.key === 'Enter') {
-      if (e.key === 'Enter' && categoryDraft.includes(':')) {
-        if (tryRapidParse(categoryDraft)) {
-          e.preventDefault()
-          return
-        }
-      }
       if (categorySuggestions.length === 0) return
       e.preventDefault()
       confirmCategorySuggestion(categorySuggestions[activeIdx] ?? categorySuggestions[0])
     } else if (e.key === 'ArrowDown') {
       if (categorySuggestions.length === 0 || !categoryDraft) return
       e.preventDefault()
-      setActiveIdx((i) => Math.min(i + 1, categorySuggestions.length - 1))
+      dispatch({ type: 'MOVE_ACTIVE', delta: 1, length: categorySuggestions.length })
     } else if (e.key === 'ArrowUp') {
       if (categorySuggestions.length === 0 || !categoryDraft) return
       e.preventDefault()
-      setActiveIdx((i) => Math.max(i - 1, 0))
+      dispatch({ type: 'MOVE_ACTIVE', delta: -1, length: categorySuggestions.length })
     } else if (e.key === 'Escape') {
       // Esc = annulla, non naviga: ↑ e ⌘K servono a risalire alla CommandBar
       if (categoryDraft) {
         e.preventDefault()
-        setCategoryDraft('')
+        dispatch({ type: 'SET_CATEGORY_DRAFT', value: '' })
       }
     }
   }
@@ -193,42 +147,30 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
     if (e.key === 'Tab' && !e.shiftKey) {
       if (!titleDraft.trim()) return
       e.preventDefault()
-      setLockedTitle(titleDraft.trim())
-      setStep('tags')
+      dispatch({ type: 'COMMIT_TITLE' })
     } else if (e.key === 'Tab' && e.shiftKey) {
       e.preventDefault()
-      setCategoryDraft(lockedCategoryName ?? '')
-      setLockedCategoryId(null)
-      setLockedCategoryName(null)
-      setStep('category')
+      dispatch({ type: 'BACK_TO_CATEGORY' })
     } else if (e.key === 'Backspace' && !titleDraft) {
       e.preventDefault()
-      setCategoryDraft('')
-      setLockedCategoryId(null)
-      setLockedCategoryName(null)
-      setStep('category')
+      dispatch({ type: 'BACK_TO_CATEGORY' })
     } else if (e.key === 'Enter') {
       if (!titleDraft.trim()) return
       e.preventDefault()
-      setLockedTitle(titleDraft.trim())
-      setStep('tags')
+      dispatch({ type: 'COMMIT_TITLE' })
     } else if (e.key === 'Escape') {
       e.preventDefault()
       if (titleDraft) {
-        setTitleDraft('')
+        dispatch({ type: 'SET_TITLE_DRAFT', value: '' })
         return
       }
       // campo vuoto: passo indietro allo step categoria
-      setCategoryDraft(lockedCategoryName ?? '')
-      setLockedCategoryId(null)
-      setLockedCategoryName(null)
-      setStep('category')
+      dispatch({ type: 'BACK_TO_CATEGORY' })
     }
   }
 
   function addTagById(id: TagId) {
-    setSelectedTagIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
-    setTagDraft('')
+    dispatch({ type: 'ADD_TAG', id })
   }
 
   function submitTask() {
@@ -239,7 +181,8 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       tagIds: selectedTagIds,
     })
     if (taskId) onTaskCreated?.(lockedCategoryId, taskId)
-    resetForNextTask()
+    // tiene la categoria bloccata e riparte dal titolo per il task successivo
+    dispatch({ type: 'RESET_FOR_NEXT_TASK' })
   }
 
   function handleTagKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -259,12 +202,10 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       (e.key === 'Backspace' && !tagDraft && selectedTagIds.length === 0)
     ) {
       e.preventDefault()
-      setTitleDraft(lockedTitle ?? '')
-      setLockedTitle(null)
-      setStep('title')
+      dispatch({ type: 'BACK_TO_TITLE' })
     } else if (e.key === 'Backspace' && !tagDraft && selectedTagIds.length > 0) {
       e.preventDefault()
-      setSelectedTagIds((prev) => prev.slice(0, -1))
+      dispatch({ type: 'REMOVE_LAST_TAG' })
     } else if (e.key === 'Enter') {
       e.preventDefault()
       if (tagDraft.trim() && tagSuggestions.length > 0) {
@@ -275,21 +216,19 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
     } else if (e.key === 'ArrowDown') {
       if (tagSuggestions.length === 0) return
       e.preventDefault()
-      setActiveIdx((i) => Math.min(i + 1, tagSuggestions.length - 1))
+      dispatch({ type: 'MOVE_ACTIVE', delta: 1, length: tagSuggestions.length })
     } else if (e.key === 'ArrowUp') {
       if (tagSuggestions.length === 0) return
       e.preventDefault()
-      setActiveIdx((i) => Math.max(i - 1, 0))
+      dispatch({ type: 'MOVE_ACTIVE', delta: -1, length: tagSuggestions.length })
     } else if (e.key === 'Escape') {
       e.preventDefault()
       if (tagDraft) {
-        setTagDraft('')
+        dispatch({ type: 'SET_TAG_DRAFT', value: '' })
         return
       }
       // campo vuoto: passo indietro allo step titolo (i tag selezionati restano)
-      setTitleDraft(lockedTitle ?? '')
-      setLockedTitle(null)
-      setStep('title')
+      dispatch({ type: 'BACK_TO_TITLE' })
     }
   }
 
@@ -298,11 +237,7 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
     if (!lockedCategoryId) return
     const currentProject = projectsLatest.find((p) => p.id === project.id)
     const stillThere = currentProject?.categories.some((c) => c.id === lockedCategoryId)
-    if (!stillThere) {
-      setLockedCategoryId(null)
-      setLockedCategoryName(null)
-      setStep('category')
-    }
+    if (!stillThere) dispatch({ type: 'CATEGORY_LOST' })
   }, [projectsLatest, project.id, lockedCategoryId])
 
   const canSubmit = lockedCategoryId !== null && lockedTitle !== null && selectedTagIds.length > 0
@@ -310,17 +245,16 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
   return {
     step,
     categoryDraft,
-    setCategoryDraft,
+    setCategoryDraft: (value: string) => dispatch({ type: 'SET_CATEGORY_DRAFT', value }),
     lockedCategoryName,
     titleDraft,
-    setTitleDraft,
+    setTitleDraft: (value: string) => dispatch({ type: 'SET_TITLE_DRAFT', value }),
     lockedTitle,
     tagDraft,
-    setTagDraft,
+    setTagDraft: (value: string) => dispatch({ type: 'SET_TAG_DRAFT', value }),
     selectedTagIds,
-    setSelectedTagIds,
     activeIdx,
-    setActiveIdx,
+    setActiveIdx: (index: number) => dispatch({ type: 'SET_ACTIVE_IDX', index }),
     categoryRef,
     titleRef,
     tagRef,
@@ -334,9 +268,9 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
     confirmCategorySuggestion,
     addTagById,
     submitTask,
-    setLockedCategoryId,
-    setLockedCategoryName,
-    setLockedTitle,
-    setStep,
+    // transizioni esposte ai chip cliccabili in QuickAddBar
+    editCategory: () => dispatch({ type: 'EDIT_CATEGORY' }),
+    editTitle: () => dispatch({ type: 'BACK_TO_TITLE' }),
+    removeTag: (id: TagId) => dispatch({ type: 'REMOVE_TAG', id }),
   }
 }

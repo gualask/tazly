@@ -28,18 +28,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
       >
         {/* Category */}
         {qa.lockedCategoryName ? (
-          <BadgeChip
-            label={qa.lockedCategoryName}
-            onClear={() => {
-              qa.setLockedCategoryId(null)
-              qa.setLockedCategoryName(null)
-              qa.setCategoryDraft(qa.lockedCategoryName ?? '')
-              qa.setLockedTitle(null)
-              qa.setTitleDraft(qa.lockedTitle ?? '')
-              qa.setSelectedTagIds([])
-              qa.setStep('category')
-            }}
-          />
+          <BadgeChip label={qa.lockedCategoryName} onClear={qa.editCategory} />
         ) : (
           <input
             ref={qa.categoryRef}
@@ -56,14 +45,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
         {/* Title */}
         {qa.lockedCategoryName &&
           (qa.lockedTitle ? (
-            <BadgeChip
-              label={qa.lockedTitle}
-              onClear={() => {
-                qa.setLockedTitle(null)
-                qa.setTitleDraft(qa.lockedTitle ?? '')
-                qa.setStep('title')
-              }}
-            />
+            <BadgeChip label={qa.lockedTitle} onClear={qa.editTitle} />
           ) : qa.step !== 'category' ? (
             <input
               ref={qa.titleRef}
@@ -87,7 +69,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
                 <button
                   type="button"
                   key={id}
-                  onClick={() => qa.setSelectedTagIds((prev) => prev.filter((x) => x !== id))}
+                  onClick={() => qa.removeTag(id)}
                   className="group/tag"
                   aria-label="Rimuovi tag"
                 >
@@ -158,8 +140,7 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
 
       {qa.step === 'category' && !qa.categoryDraft && qa.sortedCategories.length === 0 && (
         <p className="mt-1 text-muted-foreground text-xs">
-          Inizia a digitare per creare la prima categoria. Suggerimento: scrivi{' '}
-          <code className="rounded bg-muted px-1">Cat: testo #tag</code> per la sintassi rapida.
+          Inizia a digitare per creare la prima categoria.
         </p>
       )}
       {qa.step === 'tags' && allTags.length === 0 && (
