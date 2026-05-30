@@ -95,7 +95,7 @@ src/
 ├── hooks/
 │   ├── useBoardKeyboard.ts         # navigazione verticale condivisa focus/overview
 │   ├── useBoardNav.ts              # modello di navigazione (nav items, indice, salti)
-│   ├── useGlobalHotkeys.ts         # ?, ⌘C copia, ⌘Z undo, ⌘K reset
+│   ├── useGlobalHotkeys.ts         # ⌥H/⌥L/⌥T/⌥D, ⌘C copia, ⌘Z undo, ⌘K reset
 │   └── useTheme.ts
 ├── store/
 │   ├── useBoardStore.ts            # compone le slice + persist su chrome.storage.local
@@ -108,7 +108,6 @@ src/
 │   ├── focus.ts                    # helper per spostare il focus (CommandBar, QuickAdd)
 │   ├── keyboard.ts                 # helper tastiera condivisi (es. → al notepad)
 │   ├── dom.ts                      # isEditableTarget, isMac
-│   ├── quickAddParse.ts            # parser della sintassi rapida `Cat: testo #tag`
 │   ├── commandSuggestions.ts       # costruzione suggerimenti della CommandBar
 │   ├── colors.ts                   # palette TAG_COLORS (classi Tailwind)
 │   ├── id.ts                       # wrapper crypto.randomUUID
@@ -138,7 +137,7 @@ Tazly **non** è più un override della New Tab. È una pagina full-tab (`index.
 
 - Adapter `chromeStorage` in `src/lib/storage.ts` con fallback a `localStorage` se `chrome.storage.local` non è disponibile (es. quando apri `http://localhost:5173/` direttamente senza estensione).
 - Chiave: `tazly-board`.
-- `version: 1` (non viene incrementata durante dev; vedi sezione Reset).
+- Nessun `version`/`migrate`: in dev lo schema **non** è versionato (vedi sezione Reset). Si introdurranno solo dopo la prima release pubblica.
 
 ### Quick-add: macchina a step
 
@@ -146,8 +145,6 @@ La logica vive nell'hook `useQuickAdd` (`components/board/useQuickAdd.ts`); `Qui
 - input controllato + dropdown autocomplete
 - gestione tastiera: `Tab` / `Shift+Tab` / `Backspace` su input vuoto / `↑↓` / `Invio` / `Esc` (vedi [`KEYBINDINGS.md`](./KEYBINDINGS.md))
 - transizione step ⇒ focus automatico sull'input corretto via `useRef`
-
-Sintassi rapida `Cat: testo #tag1 #tag2` parsata in `lib/quickAddParse.ts`. Si attiva solo se l'utente preme `Invio` mentre digita nel campo categoria e l'input contiene `:`.
 
 > La navigazione da tastiera dell'intera board è documentata a parte in [`KEYBINDINGS.md`](./KEYBINDINGS.md): hook condiviso `useBoardKeyboard` + cablaggi `useFocusModeKeyboard` / `useOverviewKeyboard`, più le hotkey globali in `useGlobalHotkeys`.
 

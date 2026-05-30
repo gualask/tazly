@@ -1,9 +1,14 @@
 import { useEffect } from 'react'
 
-import { categoryJumpTarget, type NavItem, type NavModel } from '@/hooks/useBoardNav'
+import {
+  categoryJumpTarget,
+  type NavItem,
+  type NavModel,
+  selectionAfterTaskDone,
+} from '@/hooks/useBoardNav'
 import { isEditableTarget } from '@/lib/dom'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { CategoryId, Project, ProjectId, TaskId } from '@/types/domain'
+import type { CategoryId, Project, ProjectId, Task, TaskId } from '@/types/domain'
 
 interface BoardKeyboardOptions {
   /** Abilita il listener (es. modalità focus attiva o progetto selezionato in overview). */
@@ -11,6 +16,8 @@ interface BoardKeyboardOptions {
   projectId: ProjectId | null
   project: Project | null
   navModel: NavModel
+  /** Stesso filtro usato per costruire navItems: serve a trovare il primo task visibile. */
+  taskFilter: (t: Task) => boolean
   selectedTaskId: TaskId | null
   selectedCategoryId: CategoryId | null
   /** ←: gestita dal chiamante (preventDefault incluso). Assente = nessuna azione. */
@@ -40,6 +47,7 @@ export function useBoardKeyboard(opts: BoardKeyboardOptions) {
     projectId,
     project,
     navModel,
+    taskFilter,
     selectedTaskId,
     selectedCategoryId,
     onArrowLeft,
@@ -58,6 +66,7 @@ export function useBoardKeyboard(opts: BoardKeyboardOptions) {
   const setEditingCategoryId = useBoardStore((s) => s.setEditingCategoryId)
   const setSelectedTaskId = useBoardStore((s) => s.setSelectedTaskId)
   const setSelectedCategoryId = useBoardStore((s) => s.setSelectedCategoryId)
+  const clearSelection = useBoardStore((s) => s.clearSelection)
 
   const { navItems, navIdx, sortedCategoryIds } = navModel
 
@@ -106,10 +115,24 @@ export function useBoardKeyboard(opts: BoardKeyboardOptions) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         if (navItems.length === 0) return
-        // se siamo su una header collassata, espandila prima di scendere
+        // Se siamo su una header collassata, espandila ed entra nel suo primo task.
+        // navItems è ancora calcolato con la categoria chiusa (i suoi task non vi
+        // compaiono), quindi non possiamo affidarci a navIdx+1: selezioniamo
+        // direttamente il primo task visibile della categoria.
         if (selectedCategoryId) {
           const cat = project.categories.find((c) => c.id === selectedCategoryId)
-          if (cat?.collapsed) expandCategory(projectId, selectedCategoryId)
+          if (cat?.collapsed) {
+            expandCategory(projectId, selectedCategoryId)
+            const firstTask = project.tasks.find(
+              (t) => t.categoryId === selectedCategoryId && taskFilter(t),
+            )
+            if (firstTask) {
+              setSelectedTaskId(firstTask.id)
+              return
+            }
+            // categoria senza task visibili: prosegui all'header successivo
+            // (navItems resta valido per le sole header)
+          }
         }
         if (navIdx === -1) {
           applyNavItem(navItems[0])
@@ -136,7 +159,12 @@ export function useBoardKeyboard(opts: BoardKeyboardOptions) {
       if (e.key === ' ') {
         if (selectedTaskId) {
           e.preventDefault()
+          // calcola la destinazione PRIMA del toggle: completando, il task sparisce
+          // dalla lista filtrata e perderemmo il punto di partenza
+          const next = selectionAfterTaskDone(navItems, navIdx)
           toggleTaskDone(projectId, selectedTaskId)
+          if (next.type === 'task') setSelectedTaskId(next.id)
+          else clearSelection()
           return
         }
         if (selectedCategoryId) {
@@ -177,6 +205,7 @@ export function useBoardKeyboard(opts: BoardKeyboardOptions) {
     navItems,
     navIdx,
     sortedCategoryIds,
+    taskFilter,
     selectedTaskId,
     selectedCategoryId,
     onArrowLeft,
@@ -193,5 +222,6 @@ export function useBoardKeyboard(opts: BoardKeyboardOptions) {
     setEditingCategoryId,
     setSelectedTaskId,
     setSelectedCategoryId,
+    clearSelection,
   ])
 }

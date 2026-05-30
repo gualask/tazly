@@ -14,7 +14,7 @@ Board
 ```
 
 - **Tag controllati**: niente tag liberi. Li definisci in una schermata dedicata (nome, colore, descrizione, ordine) e li usi nei task tramite autocomplete.
-- **Quick-add strutturata**: una barra in cima a ogni progetto guida l'inserimento in 3 step (categoria → testo → tag) confermati con `Tab`. Oppure la sintassi rapida `Categoria: testo #tag` in una riga sola.
+- **Quick-add strutturata**: una barra in cima a ogni progetto guida l'inserimento in 3 step (categoria → testo → tag) confermati con `Tab`.
 - **Modalità focus**: un click sull'icona del progetto lo porta in primo piano con sidebar laterale degli altri progetti.
 - **Filtri**: per stato (aperti/fatti/tutti) e per tag (multi-select).
 - **Layout adattivo**: griglia 1/2/3 colonne in base al numero di progetti, sidebar in focus mode.
@@ -44,7 +44,6 @@ Per aggiornare l'estensione dopo aver fatto `pnpm build`, torna su `chrome://ext
    - Scrivi una **categoria** (es. `Search`) → `Tab`
    - Scrivi il **testo del task** → `Tab`
    - Seleziona uno o più **tag** dall'autocomplete → `Invio` per creare
-4. In alternativa, scrivi tutto in una riga: `Search: si resetta la pagina #bug` + `Invio`.
 
 ### Scorciatoie tastiera nella quick-add
 

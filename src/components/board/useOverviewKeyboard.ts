@@ -4,15 +4,16 @@ import { useBoardKeyboard } from '@/hooks/useBoardKeyboard'
 import type { NavModel } from '@/hooks/useBoardNav'
 import { focusCommandBar } from '@/lib/focus'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { Project } from '@/types/domain'
+import type { Project, Task } from '@/types/domain'
 
 /** Cablaggio della navigazione da tastiera in modalità overview (griglia progetti). */
 export function useOverviewKeyboard(args: {
   focusProjectId: string | null
   overviewSelectedProject: Project | null
   navModel: NavModel
+  taskFilter: (t: Task) => boolean
 }) {
-  const { focusProjectId, overviewSelectedProject, navModel } = args
+  const { focusProjectId, overviewSelectedProject, navModel, taskFilter } = args
 
   const projects = useBoardStore((s) => s.board.projects)
   const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
@@ -73,6 +74,7 @@ export function useOverviewKeyboard(args: {
     projectId: overviewSelectedProjectId,
     project: overviewSelectedProject,
     navModel,
+    taskFilter,
     selectedTaskId,
     selectedCategoryId,
     onArrowLeft: onHorizontal,

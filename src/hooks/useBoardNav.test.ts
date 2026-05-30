@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Category, Project, Task } from '@/types/domain'
-import { buildNavItems, categoryJumpTarget, navIndexOf } from './useBoardNav'
+import {
+  buildNavItems,
+  categoryJumpTarget,
+  navIndexOf,
+  selectionAfterTaskDone,
+} from './useBoardNav'
 
 function category(id: string, order: number, collapsed = false): Category {
   return { id, name: id, collapsed, order }
@@ -63,6 +68,59 @@ describe('navIndexOf', () => {
 
   it('ritorna -1 senza selezione', () => {
     expect(navIndexOf(items, null, null)).toBe(-1)
+  })
+})
+
+describe('selectionAfterTaskDone', () => {
+  // a: [t1, t2], b: [t3, t4]
+  const p = project(
+    [category('a', 0), category('b', 1)],
+    [task('t1', 'a'), task('t2', 'a'), task('t3', 'b'), task('t4', 'b')],
+  )
+  const items = buildNavItems(p, acceptAll)
+
+  it('completando un task seleziona quello subito sotto nella stessa categoria', () => {
+    const idx = navIndexOf(items, 't1', null)
+    expect(selectionAfterTaskDone(items, idx)).toEqual({ type: 'task', id: 't2' })
+  })
+
+  it('completando l’ultimo della categoria salta al primo task della successiva', () => {
+    const idx = navIndexOf(items, 't2', null)
+    expect(selectionAfterTaskDone(items, idx)).toEqual({ type: 'task', id: 't3' })
+  })
+
+  it('completando l’ultimo task in fondo risale al primo task sopra', () => {
+    const idx = navIndexOf(items, 't4', null)
+    expect(selectionAfterTaskDone(items, idx)).toEqual({ type: 'task', id: 't3' })
+  })
+
+  it('in fondo all’ultima categoria risale al task sopra, anche oltre il confine di categoria', () => {
+    // a: [t1, t2], b: [t3]; completando t3 (ultimo in assoluto) si risale a t2
+    const p2 = project(
+      [category('a', 0), category('b', 1)],
+      [task('t1', 'a'), task('t2', 'a'), task('t3', 'b')],
+    )
+    const items2 = buildNavItems(p2, acceptAll)
+    const idx = navIndexOf(items2, 't3', null)
+    expect(selectionAfterTaskDone(items2, idx)).toEqual({ type: 'task', id: 't2' })
+  })
+
+  it('completando l’unico task in assoluto torna alla card', () => {
+    const single = project([category('a', 0)], [task('t1', 'a')])
+    const singleItems = buildNavItems(single, acceptAll)
+    const idx = navIndexOf(singleItems, 't1', null)
+    expect(selectionAfterTaskDone(singleItems, idx)).toEqual({ type: 'clear' })
+  })
+
+  it('salta le categorie intermedie senza task visibili', () => {
+    // a: [t1], b: (vuota), c: [t2]
+    const sparse = project(
+      [category('a', 0), category('b', 1), category('c', 2)],
+      [task('t1', 'a'), task('t2', 'c')],
+    )
+    const sparseItems = buildNavItems(sparse, acceptAll)
+    const idx = navIndexOf(sparseItems, 't1', null)
+    expect(selectionAfterTaskDone(sparseItems, idx)).toEqual({ type: 'task', id: 't2' })
   })
 })
 

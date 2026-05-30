@@ -64,8 +64,13 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
     selectedCategoryId,
   )
 
-  useFocusModeKeyboard({ focusProjectId, focusProject, navModel: focusNav })
-  useOverviewKeyboard({ focusProjectId, overviewSelectedProject, navModel: overviewNav })
+  useFocusModeKeyboard({ focusProjectId, focusProject, navModel: focusNav, taskFilter })
+  useOverviewKeyboard({
+    focusProjectId,
+    overviewSelectedProject,
+    navModel: overviewNav,
+    taskFilter,
+  })
 
   const noTagsHint = tags.length === 0
   const noProjects = projects.length === 0

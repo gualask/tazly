@@ -61,6 +61,29 @@ export function useNavModel(
   return { navItems, navIdx, sortedCategoryIds }
 }
 
+export type DoneSelection = { type: 'task'; id: TaskId } | { type: 'clear' }
+
+/**
+ * Dopo aver completato un task (che sparisce dalla lista filtrata), sposta la
+ * selezione sul task che ne occupa lo slot, restando sempre sui task (gli header
+ * vengono saltati):
+ * - il primo task visibile sotto (stessa categoria oppure prima categoria
+ *   successiva con task);
+ * - se sotto non c'è nulla, il primo task visibile sopra;
+ * - se non resta alcun task, nessuna selezione (ritorno alla card).
+ */
+export function selectionAfterTaskDone(items: NavItem[], doneIdx: number): DoneSelection {
+  for (let i = doneIdx + 1; i < items.length; i++) {
+    const it = items[i]
+    if (it.kind === 'task') return { type: 'task', id: it.id }
+  }
+  for (let i = doneIdx - 1; i >= 0; i--) {
+    const it = items[i]
+    if (it.kind === 'task') return { type: 'task', id: it.id }
+  }
+  return { type: 'clear' }
+}
+
 export type CategoryJump =
   | { type: 'select'; id: CategoryId }
   | { type: 'exitTop' }

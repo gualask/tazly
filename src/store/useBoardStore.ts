@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
 import { chromeStorage } from '@/lib/storage'
-import type { Board, Project, ProjectId } from '@/types/domain'
 import { emptyBoard } from './helpers'
 import { categorySlice } from './slices/categorySlice'
 import { focusSlice } from './slices/focusSlice'
@@ -40,22 +39,8 @@ export const useBoardStore = create<BoardState>()(
     {
       name: 'tazly-board',
       storage: createJSONStorage(() => chromeStorage),
-      version: 2,
+      // Niente version/migrate: in dev lo schema non è versionato, si resetta (vedi DEVELOPMENT.md).
       partialize: (s) => ({ board: s.board, focusProjectId: s.focusProjectId }),
-      migrate: (persistedState, version) => {
-        const state = persistedState as { board?: Board; focusProjectId?: ProjectId | null }
-        if (!state?.board) return state
-        if (version < 2) {
-          state.board = {
-            ...state.board,
-            projects: state.board.projects.map((p) => {
-              const raw = p as Project & { notes?: string }
-              return 'notes' in raw && raw.notes !== undefined ? raw : { ...raw, notes: '' }
-            }),
-          }
-        }
-        return state
-      },
     },
   ),
 )

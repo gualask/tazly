@@ -17,14 +17,22 @@ Esiste un cursore solo alla volta: o un task, o un'header di categoria, oppure i
 
 ## Scorciatoie globali
 
-Attive ovunque, a meno delle eccezioni indicate. Tutte usano `⌘` su macOS, `Ctrl` su Windows/Linux.
+Attive ovunque, a meno delle eccezioni indicate.
+
+Le scorciatoie con **`⌥` (Option/Alt)** funzionano anche dentro gli input (sono toggle di vista/tema/aiuto), e si disabilitano solo durante una rinomina/edit inline. Si matcha su `e.code`, perché su macOS `Option`+lettera produce caratteri speciali in `e.key`.
 
 | Tasto | Azione | Disabilitato quando |
 |-------|--------|---------------------|
-| `?` | Apre/chiude la cheatsheet | sei dentro un input o in edit mode |
+| `⌥H` | Apre/chiude la cheatsheet | sei in edit/rinomina inline |
+| `⌥L` | Apre/chiude lo storico (log) | sei in edit/rinomina inline |
+| `⌥T` | Apre/chiude la gestione tag | sei in edit/rinomina inline |
+| `⌥D` | Tema chiaro/scuro | sei in edit/rinomina inline |
 | `⌘C` / `Ctrl+C` | Copia il testo del task selezionato | sei in un input, in edit mode, c'è già testo selezionato, o nessun task è selezionato |
 | `⌘Z` / `Ctrl+Z` | Annulla l'ultima chiusura task (undo) | sei in un input, in edit mode, o non c'è nulla da annullare |
-| `⌘K` / `Ctrl+K` | Reset della vista e focus alla CommandBar | sei in edit mode (funziona anche dagli input) |
+| `⌘K` / `Ctrl+K` | Reset della vista e focus alla CommandBar | sei in edit mode, o non sei sulla board (funziona anche dagli input) |
+| `Esc` | Torna alla board da una vista secondaria (log/tag) | non sei in una vista secondaria, o sei in un input |
+
+> Il `?` nell'header è un bottone cliccabile per l'aiuto, **non** una scorciatoia da tastiera: da tastiera si usa `⌥H`.
 
 ## CommandBar (search globale)
 
@@ -58,7 +66,6 @@ Il QuickAdd è un workflow a step: **categoria → titolo → tag**. Le scorciat
 | `↑` / `↓` | dropdown aperto | naviga le suggestion |
 | `→` | cursore a fine input | apre il **notepad** |
 | `Tab` / `Enter` | ≥1 suggestion | conferma la suggestion attiva |
-| `Enter` | testo nel formato `Cat: titolo #tag` | crea il task con la sintassi rapida |
 | `Shift+Tab` | sempre | focus alla CommandBar |
 | `Esc` | input con testo | svuota il campo |
 | `Esc` | input vuoto | nessuna azione (usa `↑` / `⌘K` per uscire) |
@@ -134,7 +141,7 @@ Attiva quando nessun progetto è in focus ma uno è selezionato nella griglia. V
 
 ## Notepad (note per progetto)
 
-Pannello laterale a destra in focus mode. Visibile solo se contiene testo o se è stato appena aperto in sessione: se viene svuotato e perde il focus, si nasconde.
+Pannello laterale a destra in focus mode. All'apertura di un progetto è espanso solo se quel progetto ha già delle note; altrimenti resta chiuso. Si apre con `→` (o cliccando il rail laterale) e si chiude cliccando di nuovo il rail. Non si auto-nasconde quando lo svuoti.
 
 | Tasto | Contesto | Azione |
 |-------|----------|--------|

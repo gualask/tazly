@@ -4,15 +4,16 @@ import { useBoardKeyboard } from '@/hooks/useBoardKeyboard'
 import type { NavModel } from '@/hooks/useBoardNav'
 import { focusQuickAdd as focusQuickAddInput } from '@/lib/focus'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { Project } from '@/types/domain'
+import type { Project, Task } from '@/types/domain'
 
 /** Cablaggio della navigazione da tastiera in modalità focus (singolo progetto). */
 export function useFocusModeKeyboard(args: {
   focusProjectId: string | null
   focusProject: Project | null
   navModel: NavModel
+  taskFilter: (t: Task) => boolean
 }) {
-  const { focusProjectId, focusProject, navModel } = args
+  const { focusProjectId, focusProject, navModel, taskFilter } = args
 
   const selectedTaskId = useBoardStore((s) => s.selectedTaskId)
   const selectedCategoryId = useBoardStore((s) => s.selectedCategoryId)
@@ -56,6 +57,7 @@ export function useFocusModeKeyboard(args: {
     projectId: focusProjectId,
     project: focusProject,
     navModel,
+    taskFilter,
     selectedTaskId,
     selectedCategoryId,
     onArrowRight,
