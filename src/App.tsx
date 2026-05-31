@@ -14,6 +14,7 @@ import { CommandBar } from '@/components/board/CommandBar'
 import { IconButton } from '@/components/common/IconButton'
 import { LogView } from '@/components/log/LogView'
 import { TagsView } from '@/components/tags/TagsView'
+import { Kbd } from '@/components/ui/kbd'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
 import { useTheme } from '@/hooks/useTheme'
@@ -222,9 +223,7 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 function Hint({ k, label }: { k: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">
-        {k}
-      </kbd>
+      <Kbd>{k}</Kbd>
       {label}
     </span>
   )

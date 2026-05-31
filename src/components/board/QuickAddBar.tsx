@@ -1,8 +1,9 @@
 import { IconChevronRight } from '@tabler/icons-react'
-import { useMemo } from 'react'
+import { type ComponentProps, forwardRef, useMemo } from 'react'
 
 import { TagBadge } from '@/components/tags/TagBadge'
 import { FieldShell } from '@/components/ui/field-shell'
+import { cn } from '@/lib/utils'
 import type { CategoryId, Project, Tag } from '@/types/domain'
 import { BadgeChip, Dropdown, DropdownItem } from './QuickAddDropdown'
 import { useQuickAdd } from './useQuickAdd'
@@ -13,6 +14,21 @@ interface QuickAddBarProps {
   active?: boolean
   onTaskCreated?: (categoryId: CategoryId, taskId: string) => void
 }
+
+/** Input "segmento" della quick-add: trasparente, dentro la FieldShell. */
+const QuickAddInput = forwardRef<HTMLInputElement, ComponentProps<'input'>>(
+  ({ className, ...props }, ref) => (
+    <input
+      ref={ref}
+      className={cn(
+        'h-7 flex-1 rounded bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground',
+        className,
+      )}
+      {...props}
+    />
+  ),
+)
+QuickAddInput.displayName = 'QuickAddInput'
 
 export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAddBarProps) {
   const qa = useQuickAdd({ project, allTags, active, onTaskCreated })
@@ -25,13 +41,13 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
         {qa.lockedCategoryName ? (
           <BadgeChip label={qa.lockedCategoryName} onClear={qa.editCategory} />
         ) : (
-          <input
+          <QuickAddInput
             ref={qa.categoryRef}
             value={qa.categoryDraft}
             onChange={(e) => qa.setCategoryDraft(e.target.value)}
             onKeyDown={qa.handleCategoryKey}
             placeholder="Categoria…"
-            className="h-7 min-w-32 flex-1 rounded bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground"
+            className="min-w-32"
           />
         )}
 
@@ -42,13 +58,13 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
           (qa.lockedTitle ? (
             <BadgeChip label={qa.lockedTitle} onClear={qa.editTitle} />
           ) : qa.step !== 'category' ? (
-            <input
+            <QuickAddInput
               ref={qa.titleRef}
               value={qa.titleDraft}
               onChange={(e) => qa.setTitleDraft(e.target.value)}
               onKeyDown={qa.handleTitleKey}
               placeholder="Testo del task…"
-              className="h-7 min-w-40 flex-1 rounded bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground"
+              className="min-w-40"
             />
           ) : null)}
 
@@ -73,13 +89,13 @@ export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAd
               )
             })}
             {qa.step === 'tags' && (
-              <input
+              <QuickAddInput
                 ref={qa.tagRef}
                 value={qa.tagDraft}
                 onChange={(e) => qa.setTagDraft(e.target.value)}
                 onKeyDown={qa.handleTagKey}
                 placeholder={qa.selectedTagIds.length === 0 ? 'Tag…' : '+ tag'}
-                className="h-7 min-w-24 flex-1 rounded bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground"
+                className="min-w-24"
               />
             )}
           </>

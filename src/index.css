@@ -176,6 +176,13 @@
       0 1px 0 0 var(--highlight) inset,
       var(--shadow-bar);
   }
+  /* Superficie condivisa per i menu a comparsa: opaca + blur, evita il bleed
+     del testo sottostante. Lascia all'elemento la propria ombra. */
+  .popover-surface {
+    background-color: var(--popover);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+  }
 }
 
 /* Vetro opaco quando l'utente riduce la trasparenza: meno carico GPU e più leggibilità */
@@ -186,7 +193,8 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  .glass-bar {
+  .glass-bar,
+  .popover-surface {
     background-color: var(--background);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

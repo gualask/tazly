@@ -1,10 +1,11 @@
 import { IconX } from '@tabler/icons-react'
 
+import { Pill } from '@/components/ui/pill'
 import { cn } from '@/lib/utils'
 
 export function BadgeChip({ label, onClear }: { label: string; onClear: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground text-xs">
+    <Pill>
       {label}
       <button
         type="button"
@@ -14,13 +15,13 @@ export function BadgeChip({ label, onClear }: { label: string; onClear: () => vo
       >
         <IconX className="size-3" />
       </button>
-    </span>
+    </Pill>
   )
 }
 
 export function Dropdown({ children }: { children: React.ReactNode }) {
   return (
-    <div className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md backdrop-blur-xl">
+    <div className="popover-surface absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border p-1 shadow-md">
       {children}
     </div>
   )

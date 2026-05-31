@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { TagBadge } from '@/components/tags/TagBadge'
 import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui/command'
 import { FieldShell } from '@/components/ui/field-shell'
+import { Kbd } from '@/components/ui/kbd'
+import { Pill } from '@/components/ui/pill'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { buildSuggestions, type Suggestion, suggestionKey } from '@/lib/commandSuggestions'
 import { isMac } from '@/lib/dom'
@@ -187,7 +189,7 @@ export function CommandBar() {
 
         {focusProject && (
           <>
-            <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground text-xs">
+            <Pill>
               {focusProject.name}
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -201,7 +203,7 @@ export function CommandBar() {
                 </TooltipTrigger>
                 <TooltipContent>Esci dal progetto</TooltipContent>
               </Tooltip>
-            </span>
+            </Pill>
             <IconChevronRight className="size-3 text-muted-foreground" />
           </>
         )}
@@ -263,16 +265,14 @@ export function CommandBar() {
 
         {focusProject && (
           <span className="ml-2 inline-flex items-center gap-1 text-muted-foreground text-xs">
-            <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px]">
-              Tab
-            </kbd>
+            <Kbd>Tab</Kbd>
             inserisci task
           </span>
         )}
       </FieldShell>
 
       {showSuggestions && (
-        <div className="absolute top-full left-0 z-30 w-full overflow-hidden border-x border-b border-border bg-popover shadow-md">
+        <div className="popover-surface absolute top-full left-0 z-30 w-full overflow-hidden border-x border-b border-border shadow-md">
           <CommandList className="max-h-72">
             <CommandEmpty className="px-4 py-2 text-left text-muted-foreground text-xs">
               {focusProject ? 'Nessun tag o categoria corrisponde' : 'Nessun progetto corrisponde'}

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Notepad } from '@/components/board/Notepad'
 import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
+import { Kbd } from '@/components/ui/kbd'
 import { useNavModel } from '@/hooks/useBoardNav'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -86,11 +87,7 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
         <div className="flex items-center gap-3 text-muted-foreground text-xs">
           {noTagsHint && projects.length > 0 && (
             <span>
-              nessun tag definito · usa{' '}
-              <kbd className="rounded border border-border bg-muted px-1 font-mono text-[10px]">
-                Tag
-              </kbd>{' '}
-              in alto per crearne
+              nessun tag definito · usa <Kbd>Tag</Kbd> in alto per crearne
             </span>
           )}
           {noProjects && (
