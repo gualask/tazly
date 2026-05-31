@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { chromeStorage } from '@/lib/storage'
+import { safeBoardStorage } from '@/lib/safeBoardStorage'
 import { emptyBoard } from './helpers'
 import { categorySlice } from './slices/categorySlice'
 import { focusSlice } from './slices/focusSlice'
@@ -34,11 +34,21 @@ export const useBoardStore = create<BoardState>()(
           lastClosedTask: null,
         })
       },
+
+      importBoard(board) {
+        const [set] = a
+        set({
+          board,
+          focusProjectId: null,
+          activeFilters: { tagIds: [], categoryIds: [] },
+          lastClosedTask: null,
+        })
+      },
     }),
 
     {
       name: 'tazly-board',
-      storage: createJSONStorage(() => chromeStorage),
+      storage: createJSONStorage(() => safeBoardStorage),
       // Niente version/migrate: in dev lo schema non è versionato, si resetta (vedi DEVELOPMENT.md).
       partialize: (s) => ({ board: s.board, focusProjectId: s.focusProjectId }),
     },

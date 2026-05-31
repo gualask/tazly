@@ -1,5 +1,13 @@
-import { IconHistory, IconMoon, IconRefresh, IconSun, IconTag } from '@tabler/icons-react'
-import { useState } from 'react'
+import {
+  IconDownload,
+  IconHistory,
+  IconMoon,
+  IconRefresh,
+  IconSun,
+  IconTag,
+  IconUpload,
+} from '@tabler/icons-react'
+import { useRef, useState } from 'react'
 
 import { BoardView } from '@/components/board/BoardView'
 import { CommandBar } from '@/components/board/CommandBar'
@@ -9,6 +17,7 @@ import { TagsView } from '@/components/tags/TagsView'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
 import { useTheme } from '@/hooks/useTheme'
+import { exportBoard, parseBoardBackup } from '@/lib/boardBackup'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { ProjectId } from '@/types/domain'
@@ -20,9 +29,29 @@ export function App() {
   const [logFilterProjectId, setLogFilterProjectId] = useState<ProjectId | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const resetBoard = useBoardStore((s) => s.resetBoard)
+  const importBoard = useBoardStore((s) => s.importBoard)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
   const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
   const { theme, toggleTheme } = useTheme()
+  const importInputRef = useRef<HTMLInputElement>(null)
+
+  function handleExport() {
+    exportBoard(useBoardStore.getState().board)
+  }
+
+  async function handleImportFile(file: File) {
+    try {
+      const board = parseBoardBackup(await file.text())
+      const current = useBoardStore.getState().board
+      const hasCurrent = current.projects.length > 0 || current.tags.length > 0
+      if (hasCurrent && !confirm('Importare il backup? La board attuale verrà sostituita.')) {
+        return
+      }
+      importBoard(board)
+    } catch (err) {
+      alert(`Import non riuscito: ${err instanceof Error ? err.message : 'file illeggibile'}`)
+    }
+  }
 
   function openLogForProject(projectId: ProjectId) {
     setLogFilterProjectId(projectId)
@@ -84,6 +113,33 @@ export function App() {
             >
               <IconTag />
             </IconButton>
+            <IconButton
+              variant="ghost"
+              onClick={handleExport}
+              tooltip="Esporta backup"
+              className="size-7"
+            >
+              <IconDownload />
+            </IconButton>
+            <IconButton
+              variant="ghost"
+              onClick={() => importInputRef.current?.click()}
+              tooltip="Importa backup"
+              className="size-7"
+            >
+              <IconUpload />
+            </IconButton>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleImportFile(file)
+                e.target.value = ''
+              }}
+            />
             <IconButton
               variant="ghost"
               onClick={toggleTheme}

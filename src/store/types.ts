@@ -88,4 +88,5 @@ export interface BoardState
     FocusSlice {
   board: Board
   resetBoard: () => void
+  importBoard: (board: Board) => void
 }
