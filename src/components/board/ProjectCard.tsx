@@ -90,7 +90,7 @@ export function ProjectCard({
     <div
       data-project-id={project.id}
       className={cn(
-        'flex flex-col gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground',
+        'glass flex flex-col gap-3 rounded-xl border border-border p-4 text-card-foreground',
         focused ? 'min-h-[60vh] lg:h-full lg:overflow-hidden' : 'overflow-hidden',
         isOverviewSelected && 'ring-1 ring-foreground/30',
       )}

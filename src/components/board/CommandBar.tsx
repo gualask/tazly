@@ -4,12 +4,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { TagBadge } from '@/components/tags/TagBadge'
 import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui/command'
+import { FieldShell } from '@/components/ui/field-shell'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { buildSuggestions, type Suggestion, suggestionKey } from '@/lib/commandSuggestions'
 import { isMac } from '@/lib/dom'
 import { COMMAND_BAR_INPUT_ATTR, COMMAND_BAR_INPUT_ID, focusQuickAdd } from '@/lib/focus'
 import { tryArrowRightToNotepad } from '@/lib/keyboard'
-import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { Category, CategoryId } from '@/types/domain'
 import { SuggestionContent } from './CommandSuggestionItem'
@@ -174,12 +174,7 @@ export function CommandBar() {
 
   return (
     <Command shouldFilter={false} loop className="relative overflow-visible bg-transparent">
-      <div
-        className={cn(
-          'flex flex-wrap items-center gap-1.5 rounded-md border border-transparent bg-background px-2 py-1',
-          'focus-within:border-border focus-within:bg-muted/40',
-        )}
-      >
+      <FieldShell className="py-1">
         <button
           type="button"
           onClick={resetView}
@@ -274,7 +269,7 @@ export function CommandBar() {
             inserisci task
           </span>
         )}
-      </div>
+      </FieldShell>
 
       {showSuggestions && (
         <div className="absolute top-full left-0 z-30 w-full overflow-hidden border-x border-b border-border bg-popover shadow-md">

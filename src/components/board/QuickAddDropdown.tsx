@@ -20,7 +20,7 @@ export function BadgeChip({ label, onClear }: { label: string; onClear: () => vo
 
 export function Dropdown({ children }: { children: React.ReactNode }) {
   return (
-    <div className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
+    <div className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md backdrop-blur-xl">
       {children}
     </div>
   )

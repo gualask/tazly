@@ -16,7 +16,7 @@ export function NotepadTab({ expanded, onToggle }: NotepadTabProps) {
           type="button"
           onClick={onToggle}
           className={cn(
-            'flex h-[60vh] w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-accent hover:text-foreground lg:h-full',
+            'glass flex h-[60vh] w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-border text-muted-foreground transition hover:bg-accent hover:text-foreground lg:h-full',
             expanded && 'bg-accent/50 text-foreground',
           )}
         >

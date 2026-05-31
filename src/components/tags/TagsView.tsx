@@ -66,7 +66,7 @@ function TagRow({ tag }: { tag: Tag }) {
 
   if (editing) {
     return (
-      <div className="flex flex-col gap-2 rounded-md border bg-card p-3">
+      <div className="glass flex flex-col gap-2 rounded-md border p-3">
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome tag" />
         <Input
           value={description}
@@ -87,7 +87,7 @@ function TagRow({ tag }: { tag: Tag }) {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+    <div className="glass flex items-center gap-2 rounded-md border px-3 py-2">
       <TagBadge tag={tag} />
       {tag.description ? (
         <span className="text-muted-foreground text-xs truncate flex-1">{tag.description}</span>
@@ -135,7 +135,7 @@ function NewTagForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border bg-card p-3">
+    <div className="glass flex flex-col gap-2 rounded-md border p-3">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-sm">Nuovo tag</h3>
         <IconButton onClick={onClose} tooltip="Chiudi">
