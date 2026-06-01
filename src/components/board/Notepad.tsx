@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { IconCheck, IconCopy } from '@tabler/icons-react'
+import { useEffect, useRef, useState } from 'react'
 
+import { IconButton } from '@/components/common/IconButton'
 import { Textarea } from '@/components/ui/textarea'
 import { focusQuickAdd } from '@/lib/focus'
 import { useBoardStore } from '@/store/useBoardStore'
@@ -14,6 +16,23 @@ export function Notepad({ projectId, notes }: NotepadProps) {
   const updateProjectNotes = useBoardStore((s) => s.updateProjectNotes)
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!copied) return
+    const id = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(id)
+  }, [copied])
+
+  async function copyAll() {
+    if (!notes) return
+    try {
+      await navigator.clipboard.writeText(notes)
+      setCopied(true)
+    } catch {
+      // clipboard non disponibile: nessun feedback
+    }
+  }
 
   const prevTickRef = useRef(notepadOpenTick)
   useEffect(() => {
@@ -42,7 +61,7 @@ export function Notepad({ projectId, notes }: NotepadProps) {
   }
 
   return (
-    <div data-tazly-notepad-root className="flex h-[60vh] flex-col lg:h-full">
+    <div data-tazly-notepad-root className="relative flex h-[60vh] flex-col lg:h-full">
       <Textarea
         ref={textareaRef}
         value={notes}
@@ -55,6 +74,14 @@ export function Notepad({ projectId, notes }: NotepadProps) {
         autoComplete="off"
         className="glass h-full min-h-0 flex-1 resize-none overflow-auto rounded-xl p-3 leading-relaxed [field-sizing:fixed]"
       />
+      <IconButton
+        className="absolute right-2 top-2 size-7"
+        onClick={copyAll}
+        disabled={!notes}
+        tooltip={copied ? 'Copiato' : 'Copia tutto'}
+      >
+        {copied ? <IconCheck /> : <IconCopy />}
+      </IconButton>
     </div>
   )
 }

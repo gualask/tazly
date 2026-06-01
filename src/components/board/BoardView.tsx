@@ -114,7 +114,7 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
             />
           </div>
           {notepadExpanded && (
-            <div className="lg:min-h-0 lg:basis-1/3 lg:shrink-0">
+            <div className="lg:min-h-0 lg:basis-1/2 lg:shrink-0">
               <Notepad projectId={focusProject.id} notes={focusProject.notes} />
             </div>
           )}
