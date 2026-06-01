@@ -9,6 +9,8 @@ interface Options {
   onToggleLog: () => void
   /** Toggle della gestione tag: apre se sulla board, chiude se già nei tag. */
   onToggleTags: () => void
+  /** Toggle della barra filtri (per tag) sotto la navbar. */
+  onToggleFilters: () => void
   /** Toggle del tema chiaro/scuro. */
   onToggleTheme: () => void
   /** Esc: torna alla board da una vista secondaria (attivo solo quando `inOverlay`). */
@@ -22,6 +24,7 @@ export function useGlobalHotkeys({
   onToggleHelp,
   onToggleLog,
   onToggleTags,
+  onToggleFilters,
   onToggleTheme,
   onLeaveOverlay,
   inOverlay,
@@ -40,6 +43,7 @@ export function useGlobalHotkeys({
           {
             KeyL: onToggleLog,
             KeyT: onToggleTags,
+            KeyF: onToggleFilters,
             KeyD: onToggleTheme,
             KeyH: onToggleHelp,
           } as Record<string, (() => void) | undefined>
@@ -95,7 +99,15 @@ export function useGlobalHotkeys({
       window.removeEventListener('keydown', onCopy)
       window.removeEventListener('keydown', onUndo)
     }
-  }, [onToggleHelp, onToggleLog, onToggleTags, onToggleTheme, onLeaveOverlay, inOverlay])
+  }, [
+    onToggleHelp,
+    onToggleLog,
+    onToggleTags,
+    onToggleFilters,
+    onToggleTheme,
+    onLeaveOverlay,
+    inOverlay,
+  ])
 
   useEffect(() => {
     if (!resetEnabled) return

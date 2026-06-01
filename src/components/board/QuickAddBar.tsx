@@ -1,5 +1,5 @@
 import { IconChevronRight } from '@tabler/icons-react'
-import { type ComponentProps, forwardRef, useMemo } from 'react'
+import { type ComponentProps, forwardRef, type ReactNode, useMemo } from 'react'
 
 import { TagBadge } from '@/components/tags/TagBadge'
 import { FieldShell } from '@/components/ui/field-shell'
@@ -12,6 +12,12 @@ interface QuickAddBarProps {
   project: Project
   allTags: Tag[]
   active?: boolean
+  /** Categoria pre-bloccata al mount: parte dallo step titolo (usata dal widget quick-add). */
+  initialCategory?: { id: CategoryId; name: string } | null
+  /** Contenuto reso in testa alla FieldShell (es. il chip del progetto nel composer). */
+  leading?: ReactNode
+  /** Risalita "in cima" dallo step categoria (il composer torna alla selezione progetto). */
+  onExitTop?: () => void
   onTaskCreated?: (categoryId: CategoryId, taskId: string) => void
 }
 
@@ -30,13 +36,22 @@ const QuickAddInput = forwardRef<HTMLInputElement, ComponentProps<'input'>>(
 )
 QuickAddInput.displayName = 'QuickAddInput'
 
-export function QuickAddBar({ project, allTags, active, onTaskCreated }: QuickAddBarProps) {
-  const qa = useQuickAdd({ project, allTags, active, onTaskCreated })
+export function QuickAddBar({
+  project,
+  allTags,
+  active,
+  initialCategory,
+  leading,
+  onExitTop,
+  onTaskCreated,
+}: QuickAddBarProps) {
+  const qa = useQuickAdd({ project, allTags, active, initialCategory, onExitTop, onTaskCreated })
   const tagById = useMemo(() => new Map(allTags.map((t) => [t.id, t])), [allTags])
 
   return (
     <div className="relative">
       <FieldShell>
+        {leading}
         {/* Category */}
         {qa.lockedCategoryName ? (
           <BadgeChip label={qa.lockedCategoryName} onClear={qa.editCategory} />

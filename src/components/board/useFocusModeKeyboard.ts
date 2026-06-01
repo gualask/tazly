@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 
 import { useBoardKeyboard } from '@/hooks/useBoardKeyboard'
 import type { NavModel } from '@/hooks/useBoardNav'
-import { focusQuickAdd as focusQuickAddInput } from '@/lib/focus'
+import { focusComposer } from '@/lib/focus'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { Project, Task } from '@/types/domain'
 
@@ -17,15 +17,15 @@ export function useFocusModeKeyboard(args: {
 
   const selectedTaskId = useBoardStore((s) => s.selectedTaskId)
   const selectedCategoryId = useBoardStore((s) => s.selectedCategoryId)
-  const activeFilters = useBoardStore((s) => s.activeFilters)
+  const filterTagIds = useBoardStore((s) => s.filterTagIds)
   const clearSelection = useBoardStore((s) => s.clearSelection)
   const clearFocus = useBoardStore((s) => s.clearFocus)
   const clearFilters = useBoardStore((s) => s.clearFilters)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
 
-  const focusQuickAdd = useCallback(() => {
+  const focusComposerInput = useCallback(() => {
     clearSelection()
-    focusQuickAddInput()
+    focusComposer()
   }, [clearSelection])
 
   const onArrowRight = useCallback(
@@ -43,13 +43,13 @@ export function useFocusModeKeyboard(args: {
         clearSelection()
         return
       }
-      if (activeFilters.tagIds.length > 0 || activeFilters.categoryIds.length > 0) {
+      if (filterTagIds.length > 0) {
         clearFilters()
         return
       }
       clearFocus()
     },
-    [selectedTaskId, selectedCategoryId, activeFilters, clearSelection, clearFilters, clearFocus],
+    [selectedTaskId, selectedCategoryId, filterTagIds, clearSelection, clearFilters, clearFocus],
   )
 
   useBoardKeyboard({
@@ -61,9 +61,9 @@ export function useFocusModeKeyboard(args: {
     selectedTaskId,
     selectedCategoryId,
     onArrowRight,
-    onArrowUpAtUnselected: focusQuickAdd,
-    onArrowUpAtFirst: focusQuickAdd,
-    onJumpExitTop: focusQuickAdd,
+    onArrowUpAtUnselected: focusComposerInput,
+    onArrowUpAtFirst: focusComposerInput,
+    onJumpExitTop: focusComposerInput,
     onEscape,
   })
 }

@@ -7,16 +7,18 @@ import { Kbd } from '@/components/ui/kbd'
 import { useNavModel } from '@/hooks/useBoardNav'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { ProjectId } from '@/types/domain'
+import type { ProjectId, TaskId } from '@/types/domain'
 import { useBoardSelectionSync } from './useBoardSelectionSync'
 import { useFocusModeKeyboard } from './useFocusModeKeyboard'
 import { useOverviewKeyboard } from './useOverviewKeyboard'
 
 interface BoardViewProps {
   onOpenLog?: (projectId: ProjectId) => void
+  /** Task appena creato dal composer in header, da evidenziare nella card in focus. */
+  highlightedTaskId?: TaskId | null
 }
 
-export function BoardView({ onOpenLog }: BoardViewProps = {}) {
+export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {}) {
   const projects = useBoardStore((s) => s.board.projects)
   const tags = useBoardStore((s) => s.board.tags)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
@@ -92,7 +94,7 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
           )}
           {noProjects && (
             <span className="text-muted-foreground">
-              digita un nome qui sopra per creare il primo progetto · prova{' '}
+              digita un nome nella barra in alto per creare il primo progetto · prova{' '}
               <code className="rounded bg-muted px-1 py-0.5 font-mono">ircnews</code>,{' '}
               <code className="rounded bg-muted px-1 py-0.5 font-mono">landing</code>
             </span>
@@ -110,6 +112,7 @@ export function BoardView({ onOpenLog }: BoardViewProps = {}) {
               taskFilter={taskFilter}
               selectedTaskId={selectedTaskId}
               selectedCategoryId={selectedCategoryId}
+              highlightedTaskId={highlightedTaskId}
               onOpenLog={onOpenLog}
             />
           </div>

@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 
 import { useBoardKeyboard } from '@/hooks/useBoardKeyboard'
 import type { NavModel } from '@/hooks/useBoardNav'
-import { focusCommandBar } from '@/lib/focus'
+import { focusComposer } from '@/lib/focus'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { Project, Task } from '@/types/domain'
 
@@ -38,7 +38,7 @@ export function useOverviewKeyboard(args: {
 
   const exitToCommandBar = useCallback(() => {
     setOverviewSelectedProjectId(null)
-    focusCommandBar()
+    focusComposer()
   }, [setOverviewSelectedProjectId])
 
   const onEnterUnselected = useCallback(() => {

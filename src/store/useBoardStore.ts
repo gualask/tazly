@@ -7,12 +7,13 @@ import { emptyBoard } from './helpers'
 import { categorySlice } from './slices/categorySlice'
 import { focusSlice } from './slices/focusSlice'
 import { projectSlice } from './slices/projectSlice'
+import { quickAddMemorySlice } from './slices/quickAddMemorySlice'
 import { tagSlice } from './slices/tagSlice'
 import { taskSlice } from './slices/taskSlice'
 import { uiSlice } from './slices/uiSlice'
 import type { BoardState } from './types'
 
-export type { ActiveFilters, BoardState } from './types'
+export type { BoardState } from './types'
 
 export const useBoardStore = create<BoardState>()(
   persist(
@@ -24,6 +25,7 @@ export const useBoardStore = create<BoardState>()(
       ...categorySlice(...a),
       ...taskSlice(...a),
       ...tagSlice(...a),
+      ...quickAddMemorySlice(...a),
       ...focusSlice(...a),
 
       resetBoard() {
@@ -31,7 +33,7 @@ export const useBoardStore = create<BoardState>()(
         set({
           board: emptyBoard,
           focusProjectId: null,
-          activeFilters: { tagIds: [], categoryIds: [] },
+          filterTagIds: [],
           lastClosedTask: null,
         })
       },
@@ -41,7 +43,7 @@ export const useBoardStore = create<BoardState>()(
         set({
           board,
           focusProjectId: null,
-          activeFilters: { tagIds: [], categoryIds: [] },
+          filterTagIds: [],
           lastClosedTask: null,
         })
       },
@@ -53,7 +55,11 @@ export const useBoardStore = create<BoardState>()(
       // nel notepad) persiste una volta sola, non a ogni keystroke.
       storage: createJSONStorage(() => debounceStorage(safeBoardStorage)),
       // Niente version/migrate: in dev lo schema non è versionato, si resetta (vedi DEVELOPMENT.md).
-      partialize: (s) => ({ board: s.board, focusProjectId: s.focusProjectId }),
+      partialize: (s) => ({
+        board: s.board,
+        focusProjectId: s.focusProjectId,
+        lastQuickAdd: s.lastQuickAdd,
+      }),
     },
   ),
 )

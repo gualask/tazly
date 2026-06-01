@@ -1,11 +1,6 @@
 import type { TagColor } from '@/lib/colors'
 import type { Board, CategoryId, ProjectId, Tag, TagId, Task, TaskId } from '@/types/domain'
 
-export interface ActiveFilters {
-  tagIds: TagId[]
-  categoryIds: CategoryId[]
-}
-
 export interface UiSlice {
   editingTaskId: TaskId | null
   editingCategoryId: CategoryId | null
@@ -68,14 +63,20 @@ export interface TagSlice {
   removeTag: (id: TagId) => void
 }
 
+export interface QuickAddMemorySlice {
+  /** Ultimo progetto+categoria usati dal widget quick-add: ripristinati alla riapertura. */
+  lastQuickAdd: { projectId: ProjectId; categoryId: CategoryId } | null
+  setLastQuickAdd: (projectId: ProjectId, categoryId: CategoryId) => void
+}
+
 export interface FocusSlice {
   focusProjectId: ProjectId | null
-  activeFilters: ActiveFilters
+  /** Filtro per tag applicato alla vista corrente (progetto in focus o overview). */
+  filterTagIds: TagId[]
 
   setFocusProject: (id: ProjectId | null) => void
   clearFocus: () => void
   toggleFilterTag: (id: TagId) => void
-  toggleFilterCategory: (id: CategoryId) => void
   clearFilters: () => void
 }
 
@@ -85,6 +86,7 @@ export interface BoardState
     CategorySlice,
     TaskSlice,
     TagSlice,
+    QuickAddMemorySlice,
     FocusSlice {
   board: Board
   resetBoard: () => void

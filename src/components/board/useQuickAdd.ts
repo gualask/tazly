@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 
-import { focusCommandBar } from '@/lib/focus'
 import { tryArrowRightToNotepad } from '@/lib/keyboard'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { CategoryId, Project, Tag, TagId } from '@/types/domain'
@@ -18,17 +17,38 @@ interface UseQuickAddArgs {
   project: Project
   allTags: Tag[]
   active?: boolean
+  /** Categoria pre-bloccata al mount: la quick-add parte direttamente dallo step titolo. */
+  initialCategory?: { id: CategoryId; name: string } | null
+  /** Risalita "in cima" dallo step categoria: il composer riporta alla selezione progetto. */
+  onExitTop?: () => void
   onTaskCreated?: (categoryId: CategoryId, taskId: string) => void
 }
 
-export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuickAddArgs) {
+export function useQuickAdd({
+  project,
+  allTags,
+  active,
+  initialCategory,
+  onExitTop,
+  onTaskCreated,
+}: UseQuickAddArgs) {
   const addCategory = useBoardStore((s) => s.addCategory)
   const addTask = useBoardStore((s) => s.addTask)
   const projectsLatest = useBoardStore((s) => s.board.projects)
   const setSelectedCategoryId = useBoardStore((s) => s.setSelectedCategoryId)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
 
-  const [state, dispatch] = useReducer(quickAddReducer, initialQuickAddState)
+  const [state, dispatch] = useReducer(
+    quickAddReducer,
+    initialCategory
+      ? {
+          ...initialQuickAddState,
+          lockedCategoryId: initialCategory.id,
+          lockedCategoryName: initialCategory.name,
+          step: 'title' as const,
+        }
+      : initialQuickAddState,
+  )
   const {
     step,
     categoryDraft,
@@ -98,13 +118,19 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
   function handleCategoryKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Tab' && e.shiftKey) {
       e.preventDefault()
-      focusCommandBar()
+      onExitTop?.()
       return
     }
     const dropdownOpen = categorySuggestions.length > 0 && categoryDraft.length > 0
     if (e.key === 'ArrowUp' && !dropdownOpen) {
       e.preventDefault()
-      focusCommandBar()
+      onExitTop?.()
+      return
+    }
+    if (e.key === 'Backspace' && !categoryDraft) {
+      // campo vuoto in cima: risale alla selezione progetto
+      e.preventDefault()
+      onExitTop?.()
       return
     }
     if (e.key === 'ArrowDown' && !dropdownOpen) {
@@ -129,7 +155,7 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
       e.preventDefault()
       dispatch({ type: 'MOVE_ACTIVE', delta: -1, length: categorySuggestions.length })
     } else if (e.key === 'Escape') {
-      // Esc = annulla, non naviga: ↑ e ⌘K servono a risalire alla CommandBar
+      // Esc = annulla, non naviga: ↑ e Backspace a vuoto servono a risalire al progetto
       if (categoryDraft) {
         e.preventDefault()
         dispatch({ type: 'SET_CATEGORY_DRAFT', value: '' })
@@ -139,8 +165,9 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
 
   function handleTitleKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowUp') {
+      // su = step precedente nella stessa barra
       e.preventDefault()
-      focusCommandBar()
+      dispatch({ type: 'BACK_TO_CATEGORY' })
       return
     }
     if (tryArrowRightToNotepad(e, e.currentTarget, requestOpenNotepad)) return
@@ -188,8 +215,9 @@ export function useQuickAdd({ project, allTags, active, onTaskCreated }: UseQuic
   function handleTagKey(e: React.KeyboardEvent<HTMLInputElement>) {
     const tagDropdownOpen = tagSuggestions.length > 0
     if (e.key === 'ArrowUp' && !tagDropdownOpen) {
+      // su = step precedente nella stessa barra
       e.preventDefault()
-      focusCommandBar()
+      dispatch({ type: 'BACK_TO_TITLE' })
       return
     }
     if (tryArrowRightToNotepad(e, e.currentTarget, requestOpenNotepad)) return

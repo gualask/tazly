@@ -61,7 +61,7 @@ export const uiSlice: StateCreator<BoardState, [], [], UiSlice> = (set, get) => 
       overviewSelectedProjectId: null,
       selectedTaskId: null,
       selectedCategoryId: null,
-      activeFilters: { tagIds: [], categoryIds: [] },
+      filterTagIds: [],
       viewResetTick: s.viewResetTick + 1,
     }))
   },

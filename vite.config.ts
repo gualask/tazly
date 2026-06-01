@@ -11,7 +11,10 @@ export default defineConfig({
     rollupOptions: {
       // index.html non è più referenziato dal manifest (niente override newtab):
       // la dichiariamo come entry esplicita così resta nel bundle.
-      input: { index: path.resolve(__dirname, 'index.html') },
+      input: {
+        index: path.resolve(__dirname, 'index.html'),
+        widget: path.resolve(__dirname, 'widget.html'),
+      },
     },
   },
   resolve: {

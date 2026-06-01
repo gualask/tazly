@@ -1,5 +1,6 @@
 import {
   IconDownload,
+  IconFilter,
   IconHistory,
   IconMoon,
   IconRefresh,
@@ -7,21 +8,23 @@ import {
   IconTag,
   IconUpload,
 } from '@tabler/icons-react'
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { BoardView } from '@/components/board/BoardView'
 import { CommandBar } from '@/components/board/CommandBar'
+import { FilterBar } from '@/components/board/FilterBar'
 import { IconButton } from '@/components/common/IconButton'
 import { LogView } from '@/components/log/LogView'
 import { TagsView } from '@/components/tags/TagsView'
 import { Kbd } from '@/components/ui/kbd'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { useCrossContextSync } from '@/hooks/useCrossContextSync'
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
 import { useTheme } from '@/hooks/useTheme'
 import { exportBoard, parseBoardBackup } from '@/lib/boardBackup'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
-import type { ProjectId } from '@/types/domain'
+import type { CategoryId, ProjectId, TaskId } from '@/types/domain'
 
 type View = 'board' | 'tags' | 'log'
 
@@ -29,12 +32,38 @@ export function App() {
   const [view, setView] = useState<View>('board')
   const [logFilterProjectId, setLogFilterProjectId] = useState<ProjectId | null>(null)
   const [showHelp, setShowHelp] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  const [highlightedTaskId, setHighlightedTaskId] = useState<TaskId | null>(null)
   const resetBoard = useBoardStore((s) => s.resetBoard)
   const importBoard = useBoardStore((s) => s.importBoard)
+  const expandCategory = useBoardStore((s) => s.expandCategory)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
   const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
+  const filterTagIds = useBoardStore((s) => s.filterTagIds)
   const { theme, toggleTheme } = useTheme()
   const importInputRef = useRef<HTMLInputElement>(null)
+  const highlightTimer = useRef<number | null>(null)
+
+  // allinea la board quando il widget quick-add scrive da un'altra pagina
+  useCrossContextSync()
+
+  // Il composer vive nell'header: alla creazione di un task espande la categoria e
+  // ne evidenzia brevemente la riga nella card in focus.
+  const handleTaskCreated = useCallback(
+    (projectId: ProjectId, categoryId: CategoryId, taskId: TaskId) => {
+      expandCategory(projectId, categoryId)
+      setHighlightedTaskId(taskId)
+      if (highlightTimer.current) window.clearTimeout(highlightTimer.current)
+      highlightTimer.current = window.setTimeout(() => setHighlightedTaskId(null), 1800)
+    },
+    [expandCategory],
+  )
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimer.current) window.clearTimeout(highlightTimer.current)
+    }
+  }, [])
 
   function handleExport() {
     exportBoard(useBoardStore.getState().board)
@@ -80,6 +109,8 @@ export function App() {
     },
     onToggleTags: () => setView(view === 'tags' ? 'board' : 'tags'),
     onToggleTheme: toggleTheme,
+    // la barra filtri vive solo sulla board: ignora il toggle dalle viste secondarie
+    onToggleFilters: () => view === 'board' && setShowFilters((v) => !v),
     onLeaveOverlay: leaveToBoard,
     inOverlay: view !== 'board',
     resetEnabled: view === 'board',
@@ -91,7 +122,19 @@ export function App() {
         <h1 className="sr-only">Tazly</h1>
         <header className="glass-bar sticky top-0 z-20 border-b border-border">
           <div className="mx-auto flex h-12 w-full max-w-[1440px] items-center gap-2 px-4">
-            <div className="flex-1">{view === 'board' && <CommandBar />}</div>
+            <div className="flex-1">
+              {view === 'board' && <CommandBar onTaskCreated={handleTaskCreated} />}
+            </div>
+            {view === 'board' && (
+              <IconButton
+                variant={showFilters || filterTagIds.length > 0 ? 'secondary' : 'ghost'}
+                onClick={() => setShowFilters((v) => !v)}
+                tooltip="Filtri (⌥F)"
+                className="size-7"
+              >
+                <IconFilter />
+              </IconButton>
+            )}
             <IconButton
               variant={view === 'log' ? 'secondary' : 'ghost'}
               onClick={() => {
@@ -175,7 +218,11 @@ export function App() {
           </div>
         </header>
 
-        {view === 'board' && <BoardView onOpenLog={openLogForProject} />}
+        {view === 'board' && showFilters && <FilterBar />}
+
+        {view === 'board' && (
+          <BoardView onOpenLog={openLogForProject} highlightedTaskId={highlightedTaskId} />
+        )}
         {view === 'tags' && <TagsView />}
         {view === 'log' && (
           <LogView
@@ -202,6 +249,7 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Hint k="→" label="note" />
         <Hint k="⌥L" label="apri / chiudi storico" />
         <Hint k="⌥T" label="apri / chiudi tag" />
+        <Hint k="⌥F" label="filtri" />
         <Hint k="⌥D" label="tema chiaro / scuro" />
         <Hint k="⌥H" label="aiuto" />
         <Hint k="⌘C" label="copia task" />

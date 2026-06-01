@@ -4,14 +4,11 @@ import type { BoardState, FocusSlice } from '../types'
 
 export const focusSlice: StateCreator<BoardState, [], [], FocusSlice> = (set, get) => ({
   focusProjectId: null,
-  activeFilters: { tagIds: [], categoryIds: [] },
+  filterTagIds: [],
 
   setFocusProject(id) {
-    set({
-      focusProjectId: id,
-      overviewSelectedProjectId: null,
-      activeFilters: { tagIds: [], categoryIds: [] },
-    })
+    // i filtri NON si resettano: persistono sulla vista (vedi FilterBar)
+    set({ focusProjectId: id, overviewSelectedProjectId: null })
   },
 
   clearFocus() {
@@ -21,33 +18,18 @@ export const focusSlice: StateCreator<BoardState, [], [], FocusSlice> = (set, ge
       overviewSelectedProjectId: prevFocus,
       selectedTaskId: null,
       selectedCategoryId: null,
-      activeFilters: { tagIds: [], categoryIds: [] },
     })
   },
 
   toggleFilterTag(id) {
     set((s) => ({
-      activeFilters: {
-        ...s.activeFilters,
-        tagIds: s.activeFilters.tagIds.includes(id)
-          ? s.activeFilters.tagIds.filter((x) => x !== id)
-          : [...s.activeFilters.tagIds, id],
-      },
-    }))
-  },
-
-  toggleFilterCategory(id) {
-    set((s) => ({
-      activeFilters: {
-        ...s.activeFilters,
-        categoryIds: s.activeFilters.categoryIds.includes(id)
-          ? s.activeFilters.categoryIds.filter((x) => x !== id)
-          : [...s.activeFilters.categoryIds, id],
-      },
+      filterTagIds: s.filterTagIds.includes(id)
+        ? s.filterTagIds.filter((x) => x !== id)
+        : [...s.filterTagIds, id],
     }))
   },
 
   clearFilters() {
-    set({ activeFilters: { tagIds: [], categoryIds: [] } })
+    set({ filterTagIds: [] })
   },
 })

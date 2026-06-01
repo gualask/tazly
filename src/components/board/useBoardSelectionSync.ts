@@ -12,7 +12,7 @@ export function useBoardSelectionSync(args: { focusProject: Project | null }) {
   const { focusProject } = args
 
   const projects = useBoardStore((s) => s.board.projects)
-  const activeFilters = useBoardStore((s) => s.activeFilters)
+  const filterTagIds = useBoardStore((s) => s.filterTagIds)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
   const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
   const selectedTaskId = useBoardStore((s) => s.selectedTaskId)
@@ -24,16 +24,13 @@ export function useBoardSelectionSync(args: { focusProject: Project | null }) {
   const taskFilter = useCallback(
     (t: Task) => {
       if (t.done) return false
-      if (activeFilters.tagIds.length > 0) {
-        const hasAnyTag = t.tagIds.some((id) => activeFilters.tagIds.includes(id))
+      if (filterTagIds.length > 0) {
+        const hasAnyTag = t.tagIds.some((id) => filterTagIds.includes(id))
         if (!hasAnyTag) return false
-      }
-      if (activeFilters.categoryIds.length > 0) {
-        if (!activeFilters.categoryIds.includes(t.categoryId)) return false
       }
       return true
     },
-    [activeFilters],
+    [filterTagIds],
   )
 
   const visibleTaskIds = useMemo(() => {

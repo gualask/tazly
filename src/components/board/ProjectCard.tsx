@@ -1,8 +1,7 @@
 import { IconCheck, IconDotsVertical, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { CategoryBlock } from '@/components/board/CategoryBlock'
-import { QuickAddBar } from '@/components/board/QuickAddBar'
 import { IconButton } from '@/components/common/IconButton'
 import {
   AlertDialog,
@@ -32,6 +31,8 @@ interface ProjectCardProps {
   taskFilter?: (task: Task) => boolean
   selectedTaskId?: TaskId | null
   selectedCategoryId?: CategoryId | null
+  /** Task da evidenziare brevemente (appena creato dal composer in header). */
+  highlightedTaskId?: TaskId | null
   onOpenLog?: (projectId: Project['id']) => void
 }
 
@@ -42,11 +43,11 @@ export function ProjectCard({
   taskFilter,
   selectedTaskId,
   selectedCategoryId,
+  highlightedTaskId,
   onOpenLog,
 }: ProjectCardProps) {
   const renameProject = useBoardStore((s) => s.renameProject)
   const removeProject = useBoardStore((s) => s.removeProject)
-  const expandCategory = useBoardStore((s) => s.expandCategory)
   const setFocusProject = useBoardStore((s) => s.setFocusProject)
   const focusProjectId = useBoardStore((s) => s.focusProjectId)
   const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
@@ -56,8 +57,6 @@ export function ProjectCard({
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(project.name)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
-  const [highlightedTaskId, setHighlightedTaskId] = useState<TaskId | null>(null)
-  const highlightTimer = useRef<number | null>(null)
 
   const sortedCategories = useMemo(
     () => [...project.categories].sort((a, b) => a.order - b.order),
@@ -72,19 +71,6 @@ export function ProjectCard({
     renameProject(project.id, name)
     setRenaming(false)
   }
-
-  function handleTaskCreated(categoryId: CategoryId, taskId: TaskId) {
-    expandCategory(project.id, categoryId)
-    setHighlightedTaskId(taskId)
-    if (highlightTimer.current) window.clearTimeout(highlightTimer.current)
-    highlightTimer.current = window.setTimeout(() => setHighlightedTaskId(null), 1800)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (highlightTimer.current) window.clearTimeout(highlightTimer.current)
-    }
-  }, [])
 
   return (
     <div
@@ -237,17 +223,6 @@ export function ProjectCard({
               />
             </div>
           ))}
-
-        {isFocusedHere && (
-          <div data-tazly-quickadd-root="">
-            <QuickAddBar
-              project={project}
-              allTags={allTags}
-              active
-              onTaskCreated={handleTaskCreated}
-            />
-          </div>
-        )}
       </div>
 
       <div
@@ -260,7 +235,7 @@ export function ProjectCard({
         {sortedCategories.length === 0 ? (
           isFocusedHere ? (
             <p className="text-muted-foreground text-xs">
-              Aggiungi una categoria o digita una nuova nella barra qui sopra.
+              Aggiungi un task dalla barra in alto: crea o scegli una categoria.
             </p>
           ) : null
         ) : (

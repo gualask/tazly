@@ -4,6 +4,15 @@ import { chromeStorage } from './storage'
 
 const BACKUP_SUFFIX = '-backup'
 
+// Ultima stringa scritta da QUESTO contesto: serve a riconoscere l'eco di
+// chrome.storage.onChanged (la nostra stessa scrittura) ed evitare una
+// re-idratazione inutile. È per-documento, quindi le scritture di altri
+// contesti (es. il widget overlay) non combaciano e vengono applicate.
+let lastWrittenRaw: string | null = null
+export function getLastWrittenRaw(): string | null {
+  return lastWrittenRaw
+}
+
 /**
  * Indica se un valore persistito contiene una board con dati reali.
  * Una stringa mancante, illeggibile o con board vuota torna false.
@@ -38,6 +47,7 @@ export const safeBoardStorage: StateStorage = {
     return raw
   },
   async setItem(name, value) {
+    lastWrittenRaw = value
     await chromeStorage.setItem(name, value)
     if (hasData(value)) {
       await chromeStorage.setItem(name + BACKUP_SUFFIX, value)

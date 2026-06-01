@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { IconButton } from '@/components/common/IconButton'
 import { Textarea } from '@/components/ui/textarea'
-import { focusQuickAdd } from '@/lib/focus'
+import { focusComposer } from '@/lib/focus'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { ProjectId } from '@/types/domain'
 
@@ -46,7 +46,7 @@ export function Notepad({ projectId, notes }: NotepadProps) {
     if (e.key === 'Escape') {
       e.preventDefault()
       e.currentTarget.blur()
-      focusQuickAdd()
+      focusComposer()
       return
     }
     if (e.key === 'ArrowLeft') {
@@ -55,7 +55,7 @@ export function Notepad({ projectId, notes }: NotepadProps) {
       if (atStart) {
         e.preventDefault()
         el.blur()
-        focusQuickAdd()
+        focusComposer()
       }
     }
   }
