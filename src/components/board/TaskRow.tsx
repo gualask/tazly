@@ -73,7 +73,7 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
     setSelectedTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
-  function onContainerBlur(e: React.FocusEvent<HTMLDivElement>) {
+  function onContainerBlur(e: React.FocusEvent<HTMLLIElement>) {
     const next = e.relatedTarget as Node | null
     if (next && e.currentTarget.contains(next)) return
     cancel()
@@ -81,8 +81,7 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
 
   if (editing) {
     return (
-      // biome-ignore lint/a11y/noStaticElementInteractions: onBlur traccia l'uscita del focus per annullare l'edit, non è un target interattivo
-      <div className="flex flex-col gap-2 px-2 py-0.5" onBlur={onContainerBlur}>
+      <li className="flex flex-col gap-2 px-2 py-0.5" onBlur={onContainerBlur}>
         <div className="flex items-center gap-2">
           <Input
             value={title}
@@ -116,7 +115,11 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
                   type="button"
                   key={t.id}
                   onClick={() => toggleTag(t.id)}
-                  className={cn('transition', !isSelected && 'opacity-40 hover:opacity-100')}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    'rounded-md transition',
+                    isSelected ? 'ring-2 ring-foreground/40' : 'opacity-40 hover:opacity-100',
+                  )}
                 >
                   <TagBadge tag={t} />
                 </button>
@@ -124,12 +127,12 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
             })}
           </div>
         )}
-      </div>
+      </li>
     )
   }
 
   return (
-    <div
+    <li
       data-task-id={task.id}
       className={cn(
         'group flex items-start gap-2 rounded-md px-2 py-0.5 transition-colors hover:bg-accent/40',
@@ -172,6 +175,6 @@ export function TaskRow({ projectId, task, allTags, highlighted, selected }: Tas
       >
         <IconTrash />
       </IconButton>
-    </div>
+    </li>
   )
 }

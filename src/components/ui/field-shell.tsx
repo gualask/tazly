@@ -11,7 +11,7 @@ export function FieldShell({ className, ...props }: React.ComponentProps<'div'>)
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-input px-2 py-1.5 transition-colors focus-within:border-ring',
+        'flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-input px-2 py-1.5 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50',
         className,
       )}
       {...props}

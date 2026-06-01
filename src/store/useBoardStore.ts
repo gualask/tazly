@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
+import { debounceStorage } from '@/lib/debouncedStorage'
 import { safeBoardStorage } from '@/lib/safeBoardStorage'
 import { emptyBoard } from './helpers'
 import { categorySlice } from './slices/categorySlice'
@@ -48,7 +49,9 @@ export const useBoardStore = create<BoardState>()(
 
     {
       name: 'tazly-board',
-      storage: createJSONStorage(() => safeBoardStorage),
+      // Le scritture sono debounced: una raffica di mutazioni (es. digitazione
+      // nel notepad) persiste una volta sola, non a ogni keystroke.
+      storage: createJSONStorage(() => debounceStorage(safeBoardStorage)),
       // Niente version/migrate: in dev lo schema non è versionato, si resetta (vedi DEVELOPMENT.md).
       partialize: (s) => ({ board: s.board, focusProjectId: s.focusProjectId }),
     },

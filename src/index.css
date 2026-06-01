@@ -18,7 +18,8 @@
   --secondary-foreground: oklch(0.22 0.02 270);
 
   --muted: oklch(0.96 0.008 270 / 0.6);
-  --muted-foreground: oklch(0.48 0.02 270);
+  /* L abbassato per garantire ≥4.5:1 su input/superfici chiare (placeholder e testo secondario) */
+  --muted-foreground: oklch(0.44 0.02 270);
 
   --accent: oklch(0.94 0.02 250 / 0.7);
   --accent-foreground: oklch(0.22 0.02 270);
@@ -36,6 +37,10 @@
   --ring: oklch(0.6 0.14 280 / 0.5);
 
   --radius: 1rem;
+
+  /* Flash transitori post-azione (creazione/copia task) */
+  --flash-highlight: oklch(0.85 0.12 90);
+  --flash-copied: oklch(0.7 0.15 155);
 
   --highlight: oklch(1 0 0 / 0.6);
   --shadow-spatial:
@@ -84,6 +89,10 @@
   --border: oklch(1 0 0 / 0.1);
   --input: oklch(1 0 0 / 0.08);
   --ring: oklch(0.7 0.16 280 / 0.6);
+
+  /* Flash transitori: smorzati sul fondo scuro per non abbagliare */
+  --flash-highlight: oklch(0.62 0.1 90);
+  --flash-copied: oklch(0.55 0.12 155);
 
   --highlight: oklch(1 0 0 / 0.12);
   --shadow-spatial:
@@ -176,6 +185,23 @@
       0 1px 0 0 var(--highlight) inset,
       var(--shadow-bar);
   }
+  /* Garantisce un'area cliccabile ≥32px (PRODUCT: hit target minimo) anche quando
+     l'icona è resa più piccola, senza occupare spazio extra nel layout: lo
+     pseudo-elemento estende solo la superficie del puntatore, centrato. */
+  .tap-target {
+    position: relative;
+  }
+  .tap-target::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    min-width: 32px;
+    min-height: 32px;
+    transform: translate(-50%, -50%);
+  }
   /* Superficie condivisa per i menu a comparsa: opaca + blur, evita il bleed
      del testo sottostante. Lascia all'elemento la propria ombra. */
   .popover-surface {
@@ -203,7 +229,7 @@
 
 @keyframes task-highlight {
   0% {
-    background-color: oklch(0.85 0.12 90);
+    background-color: var(--flash-highlight);
   }
   100% {
     background-color: transparent;
@@ -221,7 +247,7 @@
 
 @keyframes task-copied {
   0% {
-    background-color: oklch(0.7 0.15 155);
+    background-color: var(--flash-copied);
   }
   100% {
     background-color: transparent;

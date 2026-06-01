@@ -88,6 +88,7 @@ export function App() {
   return (
     <TooltipProvider>
       <main className="min-h-screen text-foreground">
+        <h1 className="sr-only">Tazly</h1>
         <header className="glass-bar sticky top-0 z-20 border-b border-border">
           <div className="mx-auto flex h-12 w-full max-w-[1440px] items-center gap-2 px-4">
             <div className="flex-1">{view === 'board' && <CommandBar />}</div>

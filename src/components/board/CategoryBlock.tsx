@@ -73,12 +73,10 @@ export function CategoryBlock({
   return (
     <Collapsible
       data-category-id={category.id}
+      role="listitem"
       open={!category.collapsed}
       onOpenChange={() => toggleCollapsed(projectId, category.id)}
-      className={cn(
-        'flex flex-col gap-1 rounded-md',
-        selected && !renaming && 'bg-accent/40 ring-1 ring-foreground/20',
-      )}
+      className="flex flex-col gap-1 rounded-md"
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: onBlur traccia l'uscita del focus durante la rinomina, non è un target interattivo */}
       <div className="group flex items-center gap-1" onBlur={renaming ? onRenameBlur : undefined}>
@@ -119,7 +117,11 @@ export function CategoryBlock({
               onClick={openRename}
               className="flex flex-1 items-center gap-2 text-left font-bold text-sm"
             >
-              <span>{category.name}</span>
+              <span
+                className={cn(selected && 'underline decoration-foreground/40 underline-offset-4')}
+              >
+                {category.name}
+              </span>
               <span className="text-muted-foreground text-xs">{tasks.length}</span>
             </button>
             <div className="opacity-0 group-hover:opacity-100 transition">
@@ -152,7 +154,7 @@ export function CategoryBlock({
         )}
       </div>
       <CollapsibleContent>
-        <div className="ml-6 flex flex-col gap-0">
+        <ul className="ml-6 flex flex-col gap-0">
           {tasks.length === 0 && <p className="px-2 text-muted-foreground text-xs">Nessun task</p>}
           {tasks.map((t) => (
             <TaskRow
@@ -164,7 +166,7 @@ export function CategoryBlock({
               selected={selectedTaskId === t.id}
             />
           ))}
-        </div>
+        </ul>
       </CollapsibleContent>
     </Collapsible>
   )

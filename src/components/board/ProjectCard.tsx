@@ -143,14 +143,14 @@ export function ProjectCard({
                 '-mx-2 cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-accent/40',
             )}
           >
-            <span
+            <h2
               className={cn(
                 'flex-1 truncate font-bold tracking-tight',
                 focused ? 'text-2xl' : 'text-lg',
               )}
             >
               {project.name}
-            </span>
+            </h2>
             {totalCount > 0 && doneCount > 0 ? (
               <button
                 type="button"
@@ -251,6 +251,7 @@ export function ProjectCard({
       </div>
 
       <div
+        role={sortedCategories.length > 0 ? 'list' : undefined}
         className={cn(
           'flex flex-col gap-2',
           focused && 'lg:-mr-2 lg:min-h-0 lg:flex-1 lg:overflow-auto lg:pr-2',
