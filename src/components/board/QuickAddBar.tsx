@@ -109,7 +109,7 @@ export function QuickAddBar({
                 value={qa.tagDraft}
                 onChange={(e) => qa.setTagDraft(e.target.value)}
                 onKeyDown={qa.handleTagKey}
-                placeholder={qa.selectedTagIds.length === 0 ? 'Tag…' : '+ tag'}
+                placeholder={qa.selectedTagIds.length === 0 ? 'Tag… (Invio per saltare)' : '+ tag'}
                 className="min-w-24"
               />
             )}
@@ -171,7 +171,7 @@ export function QuickAddBar({
       )}
       {qa.step === 'tags' && allTags.length === 0 && (
         <p className="mt-1 text-muted-foreground text-xs">
-          Nessun tag disponibile. Definiscine prima qualcuno in Gestione tag.
+          Nessun tag ancora: premi Invio per creare il task senza.
         </p>
       )}
     </div>

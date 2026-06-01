@@ -182,9 +182,11 @@ export function useQuickAdd({
       e.preventDefault()
       dispatch({ type: 'BACK_TO_CATEGORY' })
     } else if (e.key === 'Enter') {
-      if (!titleDraft.trim()) return
+      // Invio sul titolo: crea subito il task senza tag (Tab apre lo step tag)
+      const title = titleDraft.trim()
+      if (!title || !lockedCategoryId) return
       e.preventDefault()
-      dispatch({ type: 'COMMIT_TITLE' })
+      createTask(title)
     } else if (e.key === 'Escape') {
       e.preventDefault()
       if (titleDraft) {
@@ -200,16 +202,21 @@ export function useQuickAdd({
     dispatch({ type: 'ADD_TAG', id })
   }
 
-  function submitTask() {
-    if (!lockedCategoryId || !lockedTitle || selectedTagIds.length === 0) return
+  function createTask(title: string) {
+    if (!lockedCategoryId) return
     const taskId = addTask(project.id, {
-      title: lockedTitle,
+      title,
       categoryId: lockedCategoryId,
       tagIds: selectedTagIds,
     })
     if (taskId) onTaskCreated?.(lockedCategoryId, taskId)
     // tiene la categoria bloccata e riparte dal titolo per il task successivo
     dispatch({ type: 'RESET_FOR_NEXT_TASK' })
+  }
+
+  function submitTask() {
+    if (!lockedTitle) return
+    createTask(lockedTitle)
   }
 
   function handleTagKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -238,7 +245,7 @@ export function useQuickAdd({
       e.preventDefault()
       if (tagDraft.trim() && tagSuggestions.length > 0) {
         addTagById(tagSuggestions[activeIdx]?.id ?? tagSuggestions[0].id)
-      } else if (selectedTagIds.length > 0 && lockedCategoryId && lockedTitle) {
+      } else if (lockedCategoryId && lockedTitle) {
         submitTask()
       }
     } else if (e.key === 'ArrowDown') {
@@ -268,7 +275,7 @@ export function useQuickAdd({
     if (!stillThere) dispatch({ type: 'CATEGORY_LOST' })
   }, [projectsLatest, project.id, lockedCategoryId])
 
-  const canSubmit = lockedCategoryId !== null && lockedTitle !== null && selectedTagIds.length > 0
+  const canSubmit = lockedCategoryId !== null && lockedTitle !== null
 
   return {
     step,
