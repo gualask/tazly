@@ -82,7 +82,9 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
     <div
       className={cn(
         'mx-auto flex w-full max-w-[1440px] flex-col px-4',
-        focusProject ? 'gap-3 pt-3 pb-3 lg:h-[calc(100vh-3rem)]' : 'gap-4 pt-4 pb-24',
+        focusProject
+          ? 'gap-3 pt-3 pb-3 lg:h-[calc(100vh-3rem-var(--filters-h))]'
+          : 'gap-4 pt-4 pb-24',
       )}
     >
       {(noTagsHint || noProjects) && (

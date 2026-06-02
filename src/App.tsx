@@ -22,6 +22,7 @@ import { useCrossContextSync } from '@/hooks/useCrossContextSync'
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys'
 import { useTheme } from '@/hooks/useTheme'
 import { exportBoard, parseBoardBackup } from '@/lib/boardBackup'
+import { focusComposer, focusFilterBar } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { CategoryId, ProjectId, TaskId } from '@/types/domain'
@@ -110,7 +111,13 @@ export function App() {
     onToggleTags: () => setView(view === 'tags' ? 'board' : 'tags'),
     onToggleTheme: toggleTheme,
     // la barra filtri vive solo sulla board: ignora il toggle dalle viste secondarie
-    onToggleFilters: () => view === 'board' && setShowFilters((v) => !v),
+    onToggleFilters: () => {
+      if (view !== 'board') return
+      const next = !showFilters
+      setShowFilters(next)
+      // all'apertura porta il focus sul primo badge (rAF: la FilterBar si monta al toggle)
+      if (next) requestAnimationFrame(focusFilterBar)
+    },
     onLeaveOverlay: leaveToBoard,
     inOverlay: view !== 'board',
     resetEnabled: view === 'board',
@@ -218,7 +225,14 @@ export function App() {
           </div>
         </header>
 
-        {view === 'board' && showFilters && <FilterBar />}
+        {view === 'board' && showFilters && (
+          <FilterBar
+            onClose={() => {
+              setShowFilters(false)
+              focusComposer()
+            }}
+          />
+        )}
 
         {view === 'board' && (
           <BoardView onOpenLog={openLogForProject} highlightedTaskId={highlightedTaskId} />
@@ -249,7 +263,7 @@ function Cheatsheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Hint k="→" label="note" />
         <Hint k="⌥L" label="apri / chiudi storico" />
         <Hint k="⌥T" label="apri / chiudi tag" />
-        <Hint k="⌥F" label="filtri" />
+        <Hint k="⌥F" label="filtri · ←/→ scorri" />
         <Hint k="⌥D" label="tema chiaro / scuro" />
         <Hint k="⌥H" label="aiuto" />
         <Hint k="⌘C" label="copia task" />

@@ -122,11 +122,6 @@ export function useQuickAdd({
       return
     }
     const dropdownOpen = categorySuggestions.length > 0 && categoryDraft.length > 0
-    if (e.key === 'ArrowUp' && !dropdownOpen) {
-      e.preventDefault()
-      onExitTop?.()
-      return
-    }
     if (e.key === 'Backspace' && !categoryDraft) {
       // campo vuoto in cima: risale alla selezione progetto
       e.preventDefault()
@@ -155,7 +150,7 @@ export function useQuickAdd({
       e.preventDefault()
       dispatch({ type: 'MOVE_ACTIVE', delta: -1, length: categorySuggestions.length })
     } else if (e.key === 'Escape') {
-      // Esc = annulla, non naviga: ↑ e Backspace a vuoto servono a risalire al progetto
+      // Esc = annulla, non naviga: Backspace a vuoto serve a risalire al progetto
       if (categoryDraft) {
         e.preventDefault()
         dispatch({ type: 'SET_CATEGORY_DRAFT', value: '' })

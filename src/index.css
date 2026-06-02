@@ -38,6 +38,10 @@
 
   --radius: 1rem;
 
+  /* Altezza reale della barra filtri (0 quando chiusa): la misura la FilterBar via
+     ResizeObserver, così la modalità focus può sottrarla all'altezza viewport. */
+  --filters-h: 0px;
+
   /* Flash transitori post-azione (creazione/copia task) */
   --flash-highlight: oklch(0.85 0.12 90);
   --flash-copied: oklch(0.7 0.15 155);

@@ -10,3 +10,15 @@ export function focusComposer() {
   const input = root?.querySelector<HTMLInputElement>('input')
   input?.focus()
 }
+
+export const FILTER_BAR_ROOT_ATTR = 'data-tazly-filterbar-root'
+
+/**
+ * Mette il focus sul primo badge della barra filtri. Punto di ingresso da tastiera
+ * (⌥F) per poi navigare i tag con le frecce.
+ */
+export function focusFilterBar() {
+  const root = document.querySelector<HTMLElement>(`[${FILTER_BAR_ROOT_ATTR}]`)
+  const button = root?.querySelector<HTMLButtonElement>('button')
+  button?.focus()
+}
