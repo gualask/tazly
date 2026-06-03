@@ -19,6 +19,8 @@ interface UseQuickAddArgs {
   active?: boolean
   /** Categoria pre-bloccata al mount: la quick-add parte direttamente dallo step titolo. */
   initialCategory?: { id: CategoryId; name: string } | null
+  /** Titolo catturato dal picker DOM del widget: pre-popola la bozza titolo (seq cresce per ri-scattare). */
+  capturedTitle?: { text: string; seq: number } | null
   /** Risalita "in cima" dallo step categoria: il composer riporta alla selezione progetto. */
   onExitTop?: () => void
   onTaskCreated?: (categoryId: CategoryId, taskId: string) => void
@@ -29,6 +31,7 @@ export function useQuickAdd({
   allTags,
   active,
   initialCategory,
+  capturedTitle,
   onExitTop,
   onTaskCreated,
 }: UseQuickAddArgs) {
@@ -104,6 +107,21 @@ export function useQuickAdd({
     if (step === 'title') titleRef.current?.focus()
     if (step === 'tags') tagRef.current?.focus()
   }, [step, active])
+
+  // Testo catturato dal picker DOM (widget): lo scrive nella bozza titolo. Funziona
+  // anche se la categoria non è ancora bloccata — CONFIRM_CATEGORY preserva titleDraft,
+  // quindi il testo riemerge una volta raggiunto lo step titolo. `seq` evita di
+  // re-iniettare lo stesso testo a ogni render.
+  const lastCaptureSeq = useRef<number | null>(null)
+  useEffect(() => {
+    if (!capturedTitle) return
+    if (lastCaptureSeq.current === capturedTitle.seq) return
+    lastCaptureSeq.current = capturedTitle.seq
+    dispatch({ type: 'SET_TITLE_DRAFT', value: capturedTitle.text })
+    // Il click di cattura è avvenuto sulla pagina ospite: riporta il focus nel
+    // campo titolo dell'iframe così l'utente può confermare subito con Invio.
+    if (step === 'title') requestAnimationFrame(() => titleRef.current?.focus())
+  }, [capturedTitle, step])
 
   function confirmCategorySuggestion(s: CategorySuggestion) {
     if (s.kind === 'create') {

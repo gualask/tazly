@@ -19,6 +19,8 @@ interface TaskComposerProps {
   onSelectProject: (id: ProjectId | null) => void
   /** Categoria pre-bloccata al mount (memoria lastQuickAdd nel widget). */
   initialCategory?: { id: CategoryId; name: string } | null
+  /** Titolo catturato dal picker DOM del widget: pre-popola il campo titolo (seq cresce per ri-scattare). */
+  capturedTitle?: { text: string; seq: number } | null
   onTaskCreated?: (projectId: ProjectId, categoryId: CategoryId, taskId: string) => void
   /** Esc sull'input progetto vuoto: app = no-op; widget = chiudi overlay. */
   onEscapeAtProjectRoot?: () => void
@@ -34,6 +36,7 @@ export function TaskComposer({
   selectedProjectId,
   onSelectProject,
   initialCategory,
+  capturedTitle,
   onTaskCreated,
   onEscapeAtProjectRoot,
   onArrowDownExit,
@@ -159,6 +162,7 @@ export function TaskComposer({
           allTags={tags}
           active
           initialCategory={initialCategory}
+          capturedTitle={capturedTitle}
           leading={leading}
           onExitTop={() => onSelectProject(null)}
           onTaskCreated={(categoryId, taskId) =>

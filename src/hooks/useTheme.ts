@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import { chromeStorage } from '@/lib/storage'
+
 type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'tazly:theme'
@@ -22,7 +24,11 @@ export function useTheme() {
 
   useEffect(() => {
     applyTheme(theme)
+    // localStorage: lettura sincrona per l'init dell'app (niente flash).
     localStorage.setItem(STORAGE_KEY, theme)
+    // chrome.storage: canale non partizionato, leggibile dal widget anche quando
+    // gira in un iframe su un sito terzo (dove la localStorage è isolata per sito).
+    void chromeStorage.setItem(STORAGE_KEY, theme)
   }, [theme])
 
   const toggleTheme = useCallback(() => {

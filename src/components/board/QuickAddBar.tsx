@@ -14,6 +14,8 @@ interface QuickAddBarProps {
   active?: boolean
   /** Categoria pre-bloccata al mount: parte dallo step titolo (usata dal widget quick-add). */
   initialCategory?: { id: CategoryId; name: string } | null
+  /** Titolo catturato dal picker DOM del widget: pre-popola la bozza titolo (seq cresce per ri-scattare). */
+  capturedTitle?: { text: string; seq: number } | null
   /** Contenuto reso in testa alla FieldShell (es. il chip del progetto nel composer). */
   leading?: ReactNode
   /** Risalita "in cima" dallo step categoria (il composer torna alla selezione progetto). */
@@ -41,11 +43,20 @@ export function QuickAddBar({
   allTags,
   active,
   initialCategory,
+  capturedTitle,
   leading,
   onExitTop,
   onTaskCreated,
 }: QuickAddBarProps) {
-  const qa = useQuickAdd({ project, allTags, active, initialCategory, onExitTop, onTaskCreated })
+  const qa = useQuickAdd({
+    project,
+    allTags,
+    active,
+    initialCategory,
+    capturedTitle,
+    onExitTop,
+    onTaskCreated,
+  })
   const tagById = useMemo(() => new Map(allTags.map((t) => [t.id, t])), [allTags])
 
   return (
@@ -162,6 +173,16 @@ export function QuickAddBar({
             </DropdownItem>
           ))}
         </Dropdown>
+      )}
+
+      {/* Titolo catturato dal picker mentre si è ancora sullo step categoria: il
+          testo è già nella bozza ma il campo titolo non è visibile. Lo mostriamo qui
+          così l'utente sa che è stato preso e basta scegliere una categoria per
+          agganciarlo. */}
+      {qa.step === 'category' && qa.titleDraft && (
+        <p className="mt-1 text-muted-foreground text-xs">
+          Titolo: «{qa.titleDraft}» — scegli una categoria per agganciarlo.
+        </p>
       )}
 
       {qa.step === 'category' && !qa.categoryDraft && qa.sortedCategories.length === 0 && (
