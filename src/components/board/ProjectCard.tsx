@@ -1,4 +1,11 @@
-import { IconCheck, IconDotsVertical, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
+import {
+  IconCheck,
+  IconDotsVertical,
+  IconNotes,
+  IconPencil,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 
 import { CategoryBlock } from '@/components/board/CategoryBlock'
@@ -34,6 +41,10 @@ interface ProjectCardProps {
   /** Task da evidenziare brevemente (appena creato dal composer in header). */
   highlightedTaskId?: TaskId | null
   onOpenLog?: (projectId: Project['id']) => void
+  /** Stato del notepad (solo in focus): per riflettere lo stato sul toggle in header. */
+  notepadExpanded?: boolean
+  /** Toggle del notepad dall'header (solo in focus). */
+  onToggleNotepad?: () => void
 }
 
 export function ProjectCard({
@@ -45,6 +56,8 @@ export function ProjectCard({
   selectedCategoryId,
   highlightedTaskId,
   onOpenLog,
+  notepadExpanded,
+  onToggleNotepad,
 }: ProjectCardProps) {
   const renameProject = useBoardStore((s) => s.renameProject)
   const removeProject = useBoardStore((s) => s.removeProject)
@@ -153,6 +166,18 @@ export function ProjectCard({
               <span className="text-muted-foreground text-xs tabular-nums">
                 {doneCount}/{totalCount}
               </span>
+            )}
+            {focused && onToggleNotepad && (
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleNotepad()
+                }}
+                tooltip={notepadExpanded ? 'Chiudi note' : 'Apri note'}
+                className={cn('size-7', notepadExpanded && 'bg-accent/50 text-foreground')}
+              >
+                <IconNotes />
+              </IconButton>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>

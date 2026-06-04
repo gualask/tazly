@@ -10,11 +10,22 @@ import type { ProjectId } from '@/types/domain'
 interface NotepadProps {
   projectId: ProjectId
   notes: string
+  /** ← dall'inizio del testo: torna alla board del progetto (speculare a → che apre le note). */
+  onExitLeft: () => void
+  /** Apertura esplicita (→ / header): dà il focus al textarea, anche se monta ora. */
+  focusRequested?: boolean
+  /** Chiamata dopo aver dato il focus, così la richiesta non si ripete. */
+  onFocusConsumed?: () => void
 }
 
-export function Notepad({ projectId, notes }: NotepadProps) {
+export function Notepad({
+  projectId,
+  notes,
+  onExitLeft,
+  focusRequested,
+  onFocusConsumed,
+}: NotepadProps) {
   const updateProjectNotes = useBoardStore((s) => s.updateProjectNotes)
-  const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [copied, setCopied] = useState(false)
 
@@ -34,13 +45,11 @@ export function Notepad({ projectId, notes }: NotepadProps) {
     }
   }
 
-  const prevTickRef = useRef(notepadOpenTick)
   useEffect(() => {
-    if (notepadOpenTick === prevTickRef.current) return
-    prevTickRef.current = notepadOpenTick
-    if (notepadOpenTick === 0) return
+    if (!focusRequested) return
     textareaRef.current?.focus()
-  }, [notepadOpenTick])
+    onFocusConsumed?.()
+  }, [focusRequested, onFocusConsumed])
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Escape') {
@@ -55,7 +64,7 @@ export function Notepad({ projectId, notes }: NotepadProps) {
       if (atStart) {
         e.preventDefault()
         el.blur()
-        focusComposer()
+        onExitLeft()
       }
     }
   }

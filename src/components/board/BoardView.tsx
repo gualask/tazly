@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Notepad } from '@/components/board/Notepad'
-import { NotepadTab } from '@/components/board/NotepadTab'
 import { ProjectCard } from '@/components/board/ProjectCard'
 import { Kbd } from '@/components/ui/kbd'
 import { useNavModel } from '@/hooks/useBoardNav'
@@ -27,8 +26,15 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
   const overviewSelectedProjectId = useBoardStore((s) => s.overviewSelectedProjectId)
   const notepadOpenTick = useBoardStore((s) => s.notepadOpenTick)
   const requestOpenNotepad = useBoardStore((s) => s.requestOpenNotepad)
+  const setSelectedTaskId = useBoardStore((s) => s.setSelectedTaskId)
+  const setSelectedCategoryId = useBoardStore((s) => s.setSelectedCategoryId)
 
   const [notepadExpanded, setNotepadExpanded] = useState(false)
+  // Richiesta di focus sul notepad: true solo su apertura esplicita (→ / header), così
+  // l'auto-espansione di un progetto con note non ruba il focus alla board. Il Notepad
+  // la consuma una volta dato il focus (robusto anche quando si monta in quel momento).
+  const [notepadFocusReq, setNotepadFocusReq] = useState(false)
+  const consumeNotepadFocus = useCallback(() => setNotepadFocusReq(false), [])
 
   const sortedTags = useMemo(() => [...tags].sort((a, b) => a.name.localeCompare(b.name)), [tags])
 
@@ -45,16 +51,19 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
     [projects, overviewSelectedProjectId],
   )
 
-  // richiesta esplicita (freccia → o rail) → espandi e dai focus
+  // apertura esplicita (freccia → o pulsante header) → espandi e richiedi il focus
   useEffect(() => {
     if (notepadOpenTick === 0) return
     setNotepadExpanded(true)
+    setNotepadFocusReq(true)
   }, [notepadOpenTick])
 
-  // al cambio progetto: espanso di default solo se ci sono già delle note
+  // al cambio progetto: espanso di default solo se ci sono già delle note, senza
+  // rubare il focus alla board (apertura non esplicita)
   // biome-ignore lint/correctness/useExhaustiveDependencies: rivalutare solo al cambio progetto, non a ogni edit delle note
   useEffect(() => {
     setNotepadExpanded((focusProject?.notes.length ?? 0) > 0)
+    setNotepadFocusReq(false)
   }, [focusProjectId])
 
   const { taskFilter } = useBoardSelectionSync({ focusProject })
@@ -66,6 +75,25 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
     selectedTaskId,
     selectedCategoryId,
   )
+
+  // ← dal notepad: torna alla board. Note vuote → le richiude (erano appena state aperte
+  // con →); con del testo restano aperte. Se c'è già una selezione basta il blur del
+  // textarea (la nav da tastiera si riattiva); altrimenti selezioniamo il primo navigabile.
+  const focusBoard = useCallback(() => {
+    if (!focusProject?.notes) setNotepadExpanded(false)
+    if (selectedTaskId || selectedCategoryId) return
+    const first = focusNav.navItems[0]
+    if (!first) return
+    if (first.kind === 'header') setSelectedCategoryId(first.categoryId)
+    else setSelectedTaskId(first.id)
+  }, [
+    focusProject?.notes,
+    selectedTaskId,
+    selectedCategoryId,
+    focusNav.navItems,
+    setSelectedCategoryId,
+    setSelectedTaskId,
+  ])
 
   useFocusModeKeyboard({ focusProjectId, focusProject, navModel: focusNav, taskFilter })
   useOverviewKeyboard({
@@ -116,20 +144,24 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
               selectedCategoryId={selectedCategoryId}
               highlightedTaskId={highlightedTaskId}
               onOpenLog={onOpenLog}
+              notepadExpanded={notepadExpanded}
+              onToggleNotepad={() => {
+                if (notepadExpanded) setNotepadExpanded(false)
+                else requestOpenNotepad()
+              }}
             />
           </div>
           {notepadExpanded && (
             <div className="lg:min-h-0 lg:basis-1/2 lg:shrink-0">
-              <Notepad projectId={focusProject.id} notes={focusProject.notes} />
+              <Notepad
+                projectId={focusProject.id}
+                notes={focusProject.notes}
+                onExitLeft={focusBoard}
+                focusRequested={notepadFocusReq}
+                onFocusConsumed={consumeNotepadFocus}
+              />
             </div>
           )}
-          <NotepadTab
-            expanded={notepadExpanded}
-            onToggle={() => {
-              if (notepadExpanded) setNotepadExpanded(false)
-              else requestOpenNotepad()
-            }}
-          />
         </div>
       ) : (
         <BoardGrid count={projects.length}>
