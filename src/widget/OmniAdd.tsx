@@ -96,14 +96,14 @@ export function OmniAdd() {
     return cat ? { id: cat.id, name: cat.name } : null
   }, [selectedProject, lastQuickAdd])
 
-  // Esc globale: chiude quando non c'è una bozza da svuotare (gli input gestiscono
-  // da soli lo svuotamento / il passo indietro quando hanno testo).
+  // Esc globale: chiude il widget. Gli input chiamano `preventDefault()` solo quando
+  // c'è del testo da svuotare; in quel caso `defaultPrevented` è già true quando l'evento
+  // risale fino a window, e noi non chiudiamo. A campo vuoto nessuno previene il default,
+  // quindi chiudiamo. (Si usa `defaultPrevented` e non `activeElement.value`: React fa
+  // flush sincrono dello svuotamento prima del bubble, falsando una lettura del valore.)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return
-      const el = document.activeElement
-      const value = el instanceof HTMLInputElement ? el.value : ''
-      if (value) return
+      if (e.key !== 'Escape' || e.defaultPrevented) return
       e.preventDefault()
       closeWidget()
     }

@@ -201,13 +201,13 @@ export function useQuickAdd({
       e.preventDefault()
       createTask(title)
     } else if (e.key === 'Escape') {
-      e.preventDefault()
+      // Esc = annulla il testo del campo corrente; la risalita tra gli step è su Backspace.
+      // Campo vuoto: non navighiamo e non blocchiamo l'evento, così nel widget il listener
+      // di OmniAdd può chiudere l'overlay.
       if (titleDraft) {
+        e.preventDefault()
         dispatch({ type: 'SET_TITLE_DRAFT', value: '' })
-        return
       }
-      // campo vuoto: passo indietro allo step categoria
-      dispatch({ type: 'BACK_TO_CATEGORY' })
     }
   }
 
@@ -270,13 +270,12 @@ export function useQuickAdd({
       e.preventDefault()
       dispatch({ type: 'MOVE_ACTIVE', delta: -1, length: tagSuggestions.length })
     } else if (e.key === 'Escape') {
-      e.preventDefault()
+      // Esc = annulla il testo del campo corrente; la risalita tra gli step è su Backspace.
+      // Campo vuoto: non navighiamo e non blocchiamo l'evento (nel widget chiude l'overlay).
       if (tagDraft) {
+        e.preventDefault()
         dispatch({ type: 'SET_TAG_DRAFT', value: '' })
-        return
       }
-      // campo vuoto: passo indietro allo step titolo (i tag selezionati restano)
-      dispatch({ type: 'BACK_TO_TITLE' })
     }
   }
 
