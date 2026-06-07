@@ -203,7 +203,7 @@ export function useQuickAdd({
     } else if (e.key === 'Escape') {
       // Esc = annulla il testo del campo corrente; la risalita tra gli step è su Backspace.
       // Campo vuoto: non navighiamo e non blocchiamo l'evento, così nel widget il listener
-      // di OmniAdd può chiudere l'overlay.
+      // Esc globale (PromemoriaCapture) può chiudere l'overlay.
       if (titleDraft) {
         e.preventDefault()
         dispatch({ type: 'SET_TITLE_DRAFT', value: '' })

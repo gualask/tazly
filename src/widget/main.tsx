@@ -4,7 +4,8 @@ import { createRoot } from 'react-dom/client'
 import '@/index.css'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { chromeStorage } from '@/lib/storage'
-import { OmniAdd } from './OmniAdd'
+import type { WidgetToOverlay } from './messages'
+import { PromemoriaCapture } from './PromemoriaCapture'
 
 // Allinea il tema a quello scelto nell'app. Lo leggiamo da chrome.storage, non da
 // localStorage: quando il widget gira in un iframe su un sito terzo la localStorage
@@ -28,7 +29,7 @@ if (!rootElement) throw new Error('Elemento #root non trovato')
 createRoot(rootElement).render(
   <StrictMode>
     <TooltipProvider>
-      <OmniAdd />
+      <PromemoriaCapture />
     </TooltipProvider>
   </StrictMode>,
 )
@@ -36,4 +37,4 @@ createRoot(rootElement).render(
 // Segnala all'overlay che color-scheme è applicato e il widget è montato: solo ora
 // l'overlay rivela l'iframe, evitando il flash del backdrop opaco (in dev il modulo
 // carica async e l'evento `load` scatterebbe prima che il color-scheme combaci).
-window.parent.postMessage({ type: 'tazly:ready' }, '*')
+window.parent.postMessage({ type: 'tazly:ready' } satisfies WidgetToOverlay, '*')

@@ -1,7 +1,7 @@
 // Service worker minimale: apre Tazly come pagina full-tab on-demand e gestisce
-// la scorciatoia che inietta il widget quick-add nella pagina corrente.
+// la scorciatoia che inietta il widget di cattura promemoria nella pagina corrente.
 
-import { injectQuickAddOverlay } from './widgetOverlay'
+import { injectCaptureOverlay } from './widgetOverlay'
 
 chrome.action.onClicked.addListener(async () => {
   const url = chrome.runtime.getURL('index.html')
@@ -38,7 +38,7 @@ chrome.commands.onCommand.addListener(async (command) => {
   try {
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: injectQuickAddOverlay,
+      func: injectCaptureOverlay,
       args: [widgetUrl],
     })
   } catch {
