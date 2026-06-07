@@ -17,7 +17,7 @@ function task(id: string, categoryId: string): Task {
 }
 
 function project(categories: Category[], tasks: Task[]): Project {
-  return { id: 'p', name: 'p', categories, tasks, notes: '' }
+  return { id: 'p', name: 'p', categories, tasks, notes: '', promemoria: [] }
 }
 
 const acceptAll = () => true

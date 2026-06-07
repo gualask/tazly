@@ -13,6 +13,7 @@ export const uiSlice: StateCreator<BoardState, [], [], UiSlice> = (set, get) => 
   viewResetTick: 0,
   copiedTaskId: null,
   copyTick: 0,
+  composerCapture: null,
 
   setEditingTaskId(id) {
     set({ editingTaskId: id })
@@ -55,6 +56,12 @@ export const uiSlice: StateCreator<BoardState, [], [], UiSlice> = (set, get) => 
     set((s) => ({ notepadOpenTick: s.notepadOpenTick + 1 }))
   },
 
+  sendToComposer(text) {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    set((s) => ({ composerCapture: { text: trimmed, seq: (s.composerCapture?.seq ?? 0) + 1 } }))
+  },
+
   resetView() {
     set((s) => ({
       focusProjectId: null,
@@ -62,6 +69,8 @@ export const uiSlice: StateCreator<BoardState, [], [], UiSlice> = (set, get) => 
       selectedTaskId: null,
       selectedCategoryId: null,
       filterTagIds: [],
+      // come setFocusProject/clearFocus: uscendo dal focus il seed del composer decade
+      composerCapture: null,
       viewResetTick: s.viewResetTick + 1,
     }))
   },

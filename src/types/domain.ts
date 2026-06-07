@@ -4,6 +4,7 @@ export type TagId = string
 export type CategoryId = string
 export type ProjectId = string
 export type TaskId = string
+export type PromemoriaId = string
 
 export interface Tag {
   id: TagId
@@ -29,12 +30,23 @@ export interface Category {
   order: number
 }
 
+/** Spunto grezzo catturato dal widget: inbox transitorio del progetto, da smaltire in task/note. */
+export interface Promemoria {
+  id: PromemoriaId
+  text: string
+  /** Pagina di provenienza (solo contesto: può essere privata/effimera). */
+  sourceUrl?: string
+  sourceTitle?: string
+  createdAt: number
+}
+
 export interface Project {
   id: ProjectId
   name: string
   categories: Category[]
   tasks: Task[]
   notes: string
+  promemoria: Promemoria[]
 }
 
 export interface Board {

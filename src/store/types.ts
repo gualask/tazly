@@ -1,5 +1,14 @@
 import type { TagColor } from '@/lib/colors'
-import type { Board, CategoryId, ProjectId, Tag, TagId, Task, TaskId } from '@/types/domain'
+import type {
+  Board,
+  CategoryId,
+  ProjectId,
+  PromemoriaId,
+  Tag,
+  TagId,
+  Task,
+  TaskId,
+} from '@/types/domain'
 
 export interface UiSlice {
   editingTaskId: TaskId | null
@@ -11,6 +20,8 @@ export interface UiSlice {
   viewResetTick: number
   copiedTaskId: TaskId | null
   copyTick: number
+  /** Testo da seminare nel titolo del composer (es. selezione da un promemoria). `seq` cresce a ogni invio. */
+  composerCapture: { text: string; seq: number } | null
 
   setEditingTaskId: (id: TaskId | null) => void
   setEditingCategoryId: (id: CategoryId | null) => void
@@ -21,6 +32,7 @@ export interface UiSlice {
   markTaskCopied: (id: TaskId) => void
   copyTaskById: (id: TaskId) => Promise<void>
   requestOpenNotepad: () => void
+  sendToComposer: (text: string) => void
   resetView: () => void
 }
 
@@ -30,6 +42,17 @@ export interface ProjectSlice {
   updateProjectNotes: (id: ProjectId, notes: string) => void
   removeProject: (id: ProjectId) => void
   isProjectNameTaken: (name: string) => boolean
+}
+
+export interface PromemoriaSlice {
+  /** Cattura uno spunto nell'inbox del progetto (chiamato dal widget). */
+  addPromemoria: (
+    projectId: ProjectId,
+    input: { text: string; sourceUrl?: string; sourceTitle?: string },
+  ) => PromemoriaId | null
+  removePromemoria: (projectId: ProjectId, id: PromemoriaId) => void
+  /** Sposta un promemoria nelle note del progetto (append con divisorio) e lo rimuove. */
+  convertPromemoriaToNote: (projectId: ProjectId, id: PromemoriaId) => void
 }
 
 export interface CategorySlice {
@@ -83,6 +106,7 @@ export interface FocusSlice {
 export interface BoardState
   extends UiSlice,
     ProjectSlice,
+    PromemoriaSlice,
     CategorySlice,
     TaskSlice,
     TagSlice,

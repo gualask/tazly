@@ -7,6 +7,7 @@ const projectA: Project = {
   id: 'p1',
   name: 'Alpha',
   notes: '',
+  promemoria: [],
   categories: [
     { id: 'c1', name: 'Backend', collapsed: false, order: 0 },
     { id: 'c2', name: 'Frontend', collapsed: false, order: 1 },

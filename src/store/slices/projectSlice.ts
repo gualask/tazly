@@ -23,7 +23,7 @@ export const projectSlice: StateCreator<BoardState, [], [], ProjectSlice> = (set
         ...s.board,
         projects: [
           ...s.board.projects,
-          { id, name: trimmed, categories: [], tasks: [], notes: '' },
+          { id, name: trimmed, categories: [], tasks: [], notes: '', promemoria: [] },
         ],
       },
     }))

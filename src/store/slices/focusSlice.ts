@@ -7,8 +7,10 @@ export const focusSlice: StateCreator<BoardState, [], [], FocusSlice> = (set, ge
   filterTagIds: [],
 
   setFocusProject(id) {
-    // i filtri NON si resettano: persistono sulla vista (vedi FilterBar)
-    set({ focusProjectId: id, overviewSelectedProjectId: null })
+    // i filtri NON si resettano: persistono sulla vista (vedi FilterBar).
+    // composerCapture sì: è un seed legato al progetto corrente, non deve riemergere
+    // nel composer di un altro progetto al rimontaggio della QuickAddBar.
+    set({ focusProjectId: id, overviewSelectedProjectId: null, composerCapture: null })
   },
 
   clearFocus() {
@@ -18,6 +20,7 @@ export const focusSlice: StateCreator<BoardState, [], [], FocusSlice> = (set, ge
       overviewSelectedProjectId: prevFocus,
       selectedTaskId: null,
       selectedCategoryId: null,
+      composerCapture: null,
     })
   },
 
