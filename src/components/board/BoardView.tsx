@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Notepad } from '@/components/board/Notepad'
 import { ProjectCard } from '@/components/board/ProjectCard'
+import { PromemoriaPanel } from '@/components/board/PromemoriaPanel'
 import { Kbd } from '@/components/ui/kbd'
 import { useNavModel } from '@/hooks/useBoardNav'
 import { cn } from '@/lib/utils'
@@ -35,6 +36,8 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
   // la consuma una volta dato il focus (robusto anche quando si monta in quel momento).
   const [notepadFocusReq, setNotepadFocusReq] = useState(false)
   const consumeNotepadFocus = useCallback(() => setNotepadFocusReq(false), [])
+  // Inbox promemoria: pannello laterale mutuamente esclusivo col notepad.
+  const [promemoriaOpen, setPromemoriaOpen] = useState(false)
 
   const sortedTags = useMemo(() => [...tags].sort((a, b) => a.name.localeCompare(b.name)), [tags])
 
@@ -56,6 +59,7 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
     if (notepadOpenTick === 0) return
     setNotepadExpanded(true)
     setNotepadFocusReq(true)
+    setPromemoriaOpen(false)
   }, [notepadOpenTick])
 
   // al cambio progetto: espanso di default solo se ci sono già delle note, senza
@@ -64,6 +68,7 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
   useEffect(() => {
     setNotepadExpanded((focusProject?.notes.length ?? 0) > 0)
     setNotepadFocusReq(false)
+    setPromemoriaOpen(false)
   }, [focusProjectId])
 
   const { taskFilter } = useBoardSelectionSync({ focusProject })
@@ -149,17 +154,30 @@ export function BoardView({ onOpenLog, highlightedTaskId }: BoardViewProps = {})
                 if (notepadExpanded) setNotepadExpanded(false)
                 else requestOpenNotepad()
               }}
+              promemoriaOpen={promemoriaOpen}
+              onTogglePromemoria={() => {
+                if (promemoriaOpen) {
+                  setPromemoriaOpen(false)
+                } else {
+                  setPromemoriaOpen(true)
+                  setNotepadExpanded(false)
+                }
+              }}
             />
           </div>
-          {notepadExpanded && (
+          {(notepadExpanded || promemoriaOpen) && (
             <div className="lg:min-h-0 lg:basis-1/2 lg:shrink-0">
-              <Notepad
-                projectId={focusProject.id}
-                notes={focusProject.notes}
-                onExitLeft={focusBoard}
-                focusRequested={notepadFocusReq}
-                onFocusConsumed={consumeNotepadFocus}
-              />
+              {promemoriaOpen ? (
+                <PromemoriaPanel projectId={focusProject.id} promemoria={focusProject.promemoria} />
+              ) : (
+                <Notepad
+                  projectId={focusProject.id}
+                  notes={focusProject.notes}
+                  onExitLeft={focusBoard}
+                  focusRequested={notepadFocusReq}
+                  onFocusConsumed={consumeNotepadFocus}
+                />
+              )}
             </div>
           )}
         </div>

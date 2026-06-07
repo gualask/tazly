@@ -18,11 +18,13 @@ export function CommandBar({ onTaskCreated }: CommandBarProps) {
   const clearFocus = useBoardStore((s) => s.clearFocus)
   const setOverviewSelectedProjectId = useBoardStore((s) => s.setOverviewSelectedProjectId)
   const resetView = useBoardStore((s) => s.resetView)
+  const composerCapture = useBoardStore((s) => s.composerCapture)
 
   return (
     <TaskComposer
       selectedProjectId={focusProjectId}
       onSelectProject={(id) => (id ? setFocusProject(id) : clearFocus())}
+      capturedTitle={composerCapture}
       onArrowDownExit={() => {
         if (projects.length > 0) setOverviewSelectedProjectId(projects[0].id)
       }}

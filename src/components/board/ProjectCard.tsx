@@ -1,6 +1,7 @@
 import {
   IconCheck,
   IconDotsVertical,
+  IconInbox,
   IconNotes,
   IconPencil,
   IconTrash,
@@ -45,6 +46,10 @@ interface ProjectCardProps {
   notepadExpanded?: boolean
   /** Toggle del notepad dall'header (solo in focus). */
   onToggleNotepad?: () => void
+  /** Stato dell'inbox promemoria (solo in focus). */
+  promemoriaOpen?: boolean
+  /** Toggle dell'inbox promemoria dall'header (solo in focus). */
+  onTogglePromemoria?: () => void
 }
 
 export function ProjectCard({
@@ -58,6 +63,8 @@ export function ProjectCard({
   onOpenLog,
   notepadExpanded,
   onToggleNotepad,
+  promemoriaOpen,
+  onTogglePromemoria,
 }: ProjectCardProps) {
   const renameProject = useBoardStore((s) => s.renameProject)
   const removeProject = useBoardStore((s) => s.removeProject)
@@ -166,6 +173,25 @@ export function ProjectCard({
               <span className="text-muted-foreground text-xs tabular-nums">
                 {doneCount}/{totalCount}
               </span>
+            )}
+            {focused && onTogglePromemoria && (
+              <div className="relative">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onTogglePromemoria()
+                  }}
+                  tooltip={promemoriaOpen ? 'Chiudi promemoria' : 'Apri promemoria'}
+                  className={cn('size-7', promemoriaOpen && 'bg-accent/50 text-foreground')}
+                >
+                  <IconInbox />
+                </IconButton>
+                {project.promemoria.length > 0 && (
+                  <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 font-medium text-[10px] text-primary-foreground tabular-nums leading-4">
+                    {project.promemoria.length}
+                  </span>
+                )}
+              </div>
             )}
             {focused && onToggleNotepad && (
               <IconButton
