@@ -19,6 +19,7 @@ export const promemoriaSlice: StateCreator<BoardState, [], [], PromemoriaSlice> 
     const item = {
       id,
       text,
+      html: trimOrNull(input.html ?? '') ?? undefined,
       sourceUrl: input.sourceUrl,
       sourceTitle: input.sourceTitle,
       createdAt: Date.now(),

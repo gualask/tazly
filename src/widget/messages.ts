@@ -8,10 +8,13 @@
  * ora un refuso o un campo mancante diventa un errore di tipo.
  */
 
-/** Overlay → widget: testo cliccato sulla pagina + provenienza (la vede solo l'overlay). */
+/** Overlay → widget: contenuto cliccato sulla pagina + provenienza (la vede solo l'overlay). */
 export interface CaptureMessage {
   type: 'tazly:capture'
+  /** Derivazione plain-text (fallback ed editing). */
   text: string
+  /** HTML grezzo del frammento, con URL resi assoluti; il widget lo sanitizza. */
+  html: string
   sourceUrl: string
   sourceTitle: string
 }

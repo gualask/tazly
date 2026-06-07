@@ -48,7 +48,7 @@ export interface PromemoriaSlice {
   /** Cattura uno spunto nell'inbox del progetto (chiamato dal widget). */
   addPromemoria: (
     projectId: ProjectId,
-    input: { text: string; sourceUrl?: string; sourceTitle?: string },
+    input: { text: string; html?: string; sourceUrl?: string; sourceTitle?: string },
   ) => PromemoriaId | null
   removePromemoria: (projectId: ProjectId, id: PromemoriaId) => void
   /** Sposta un promemoria nelle note del progetto (append con divisorio) e lo rimuove. */

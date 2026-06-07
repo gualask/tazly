@@ -1,8 +1,17 @@
-import { IconArrowRight, IconInbox, IconNotes, IconTrash } from '@tabler/icons-react'
+import {
+  IconArrowRight,
+  IconCheck,
+  IconCopy,
+  IconInbox,
+  IconNotes,
+  IconTrash,
+} from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { IconButton } from '@/components/common/IconButton'
+import { SafeHtml } from '@/components/common/SafeHtml'
 import { focusComposer } from '@/lib/focus'
+import { copyRichText, escapeHtml } from '@/lib/html'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { ProjectId, Promemoria } from '@/types/domain'
 
@@ -30,6 +39,20 @@ export function PromemoriaPanel({ projectId, promemoria }: PromemoriaPanelProps)
 
   const [chip, setChip] = useState<Chip | null>(null)
   const chipRef = useRef<HTMLButtonElement>(null)
+  // Id del promemoria appena copiato → spunta transitoria sul bottone.
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  // Copia fedele: text/html (renderizzato, per Confluence/Docs) + text/plain.
+  async function copyPromemoria(m: Promemoria) {
+    try {
+      const html = m.html ?? `<p>${escapeHtml(m.text)}</p>`
+      await copyRichText(html, m.text)
+      setCopiedId(m.id)
+      setTimeout(() => setCopiedId((id) => (id === m.id ? null : id)), 2000)
+    } catch {
+      // clipboard non disponibile: nessun feedback
+    }
+  }
 
   // Dopo una selezione, mostra il chip vicino al testo evidenziato.
   function handleMouseUp() {
@@ -72,53 +95,69 @@ export function PromemoriaPanel({ projectId, promemoria }: PromemoriaPanelProps)
   }, [chip])
 
   return (
-    <div className="flex h-[60vh] flex-col gap-2 lg:h-full">
-      <div className="px-0.5">
-        <div className="font-medium text-muted-foreground text-xs">
-          Promemoria · {promemoria.length}
-        </div>
-        {promemoria.length > 0 && (
-          <div className="text-[11px] text-muted-foreground/70">
-            evidenzia il testo per creare un task
+    <div className="flex h-[60vh] flex-col lg:h-full">
+      <div className="glass flex min-h-0 flex-1 flex-col gap-3 rounded-xl border border-border p-3">
+        <div className="px-0.5">
+          <div className="font-medium text-muted-foreground text-xs">
+            Promemoria · {promemoria.length}
           </div>
+          {promemoria.length > 0 && (
+            <div className="text-[11px] text-muted-foreground/70">
+              evidenzia il testo per creare un task
+            </div>
+          )}
+        </div>
+
+        {promemoria.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
+            <IconInbox className="size-6 opacity-60" />
+            <p className="text-xs">Nessuno spunto. Cattura del testo dal widget mentre navighi.</p>
+          </div>
+        ) : (
+          <ul
+            onMouseUp={handleMouseUp}
+            className="-mr-1 flex min-h-0 flex-1 flex-col gap-2 overflow-auto pr-1"
+          >
+            {promemoria.map((m) => (
+              <li key={m.id} className="rounded-lg border border-border/60 bg-muted p-3">
+                {m.html ? (
+                  <SafeHtml html={m.html} />
+                ) : (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{m.text}</p>
+                )}
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="truncate text-muted-foreground text-xs">
+                    {m.sourceTitle ? `da: ${m.sourceTitle}` : ''}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <IconButton
+                      onClick={() => copyPromemoria(m)}
+                      tooltip={copiedId === m.id ? 'Copiato' : 'Copia (formattato)'}
+                      className="size-7"
+                    >
+                      {copiedId === m.id ? <IconCheck /> : <IconCopy />}
+                    </IconButton>
+                    <IconButton
+                      onClick={() => convertPromemoriaToNote(projectId, m.id)}
+                      tooltip="Aggiungi alle note"
+                      className="size-7"
+                    >
+                      <IconNotes />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => removePromemoria(projectId, m.id)}
+                      tooltip="Scarta"
+                      className="size-7"
+                    >
+                      <IconTrash />
+                    </IconButton>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-
-      {promemoria.length === 0 ? (
-        <div className="glass flex flex-1 flex-col items-center justify-center gap-2 rounded-xl p-6 text-center text-muted-foreground">
-          <IconInbox className="size-6 opacity-60" />
-          <p className="text-xs">Nessuno spunto. Cattura del testo dal widget mentre navighi.</p>
-        </div>
-      ) : (
-        <ul onMouseUp={handleMouseUp} className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
-          {promemoria.map((m) => (
-            <li key={m.id} className="glass rounded-xl p-3">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">{m.text}</p>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <span className="truncate text-muted-foreground text-xs">
-                  {m.sourceTitle ? `da: ${m.sourceTitle}` : ''}
-                </span>
-                <div className="flex shrink-0 items-center gap-0.5">
-                  <IconButton
-                    onClick={() => convertPromemoriaToNote(projectId, m.id)}
-                    tooltip="Aggiungi alle note"
-                    className="size-7"
-                  >
-                    <IconNotes />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => removePromemoria(projectId, m.id)}
-                    tooltip="Scarta"
-                    className="size-7"
-                  >
-                    <IconTrash />
-                  </IconButton>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
 
       {chip && (
         <button

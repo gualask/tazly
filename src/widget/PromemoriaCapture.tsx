@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 
 import { ProjectPicker } from '@/components/board/ProjectPicker'
 import { IconButton } from '@/components/common/IconButton'
+import { SafeHtml } from '@/components/common/SafeHtml'
 import { Kbd } from '@/components/ui/kbd'
 import { Pill } from '@/components/ui/pill'
 import { Textarea } from '@/components/ui/textarea'
+import { cleanCapturedHtml } from '@/lib/html'
 import { useBoardStore } from '@/store/useBoardStore'
 import type { ProjectId } from '@/types/domain'
 import type { OverlayToWidget, WidgetToOverlay } from './messages'
@@ -36,6 +38,9 @@ export function PromemoriaCapture() {
 
   const [selectedProjectId, setSelectedProjectId] = useState<ProjectId | null>(null)
   const [text, setText] = useState('')
+  // HTML sanitizzato del frammento catturato dalla pagina: forma canonica per la
+  // copia fedele. Vuoto quando lo spunto è digitato a mano (solo plain text).
+  const [html, setHtml] = useState('')
   const [source, setSource] = useState<Source>({})
   const [saved, setSaved] = useState(false)
   // Modalità selezione: l'overlay collassa l'iframe a icona e libera la pagina per la
@@ -94,6 +99,9 @@ export function PromemoriaCapture() {
       const data = e.data as OverlayToWidget | null
       if (data?.type === 'tazly:capture' && data.text) {
         setText(data.text)
+        // Sanitizza + pulisci i link qui (il widget può importare e conosce la
+        // pagina d'origine; l'overlay no): storage e anteprima partono già puliti.
+        setHtml(data.html ? cleanCapturedHtml(data.html, data.sourceUrl) : '')
         setSource({ url: data.sourceUrl, title: data.sourceTitle })
         setSaved(false)
         setSelecting(false) // l'overlay è già tornato a dimensione piena
@@ -119,11 +127,13 @@ export function PromemoriaCapture() {
     if (!selectedProjectId || !text.trim()) return
     addPromemoria(selectedProjectId, {
       text,
+      html: html || undefined,
       sourceUrl: source.url,
       sourceTitle: source.title,
     })
     // Resta aperto, pronto a un'altra cattura: svuota e conferma.
     setText('')
+    setHtml('')
     setSource({})
     setSaved(true)
     textareaRef.current?.focus()
@@ -147,8 +157,18 @@ export function PromemoriaCapture() {
     if (e.key === 'Escape' && text) {
       e.preventDefault()
       setText('')
+      setHtml('')
       setSource({})
     }
+  }
+
+  // Scarta la cattura corrente e torna all'inserimento manuale (textarea).
+  function clearCapture() {
+    setText('')
+    setHtml('')
+    setSource({})
+    setSaved(false)
+    textareaRef.current?.focus()
   }
 
   // Modalità selezione: l'iframe è collassato a 44px dall'overlay → mostra solo
@@ -205,18 +225,33 @@ export function PromemoriaCapture() {
               </button>
             </div>
 
-            <Textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value)
-                setSaved(false)
-              }}
-              onKeyDown={handleTextareaKey}
-              placeholder="Spunto da ricordare…"
-              spellCheck={false}
-              className="glass max-h-60 min-h-20 resize-none rounded-xl p-3 leading-relaxed [field-sizing:content]"
-            />
+            {html ? (
+              // Cattura dalla pagina: anteprima fedele (read-only). La formattazione
+              // è quella che verrà copiata in Confluence & co. ⌫ per scartare.
+              <div className="glass relative max-h-60 overflow-auto rounded-xl p-3">
+                <SafeHtml html={html} />
+                <IconButton
+                  className="absolute top-1.5 right-1.5 size-6"
+                  onClick={clearCapture}
+                  tooltip="Scarta e scrivi a mano"
+                >
+                  <IconX />
+                </IconButton>
+              </div>
+            ) : (
+              <Textarea
+                ref={textareaRef}
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value)
+                  setSaved(false)
+                }}
+                onKeyDown={handleTextareaKey}
+                placeholder="Spunto da ricordare…"
+                spellCheck={false}
+                className="glass max-h-60 min-h-20 resize-none rounded-xl p-3 leading-relaxed [field-sizing:content]"
+              />
+            )}
 
             <div className="flex items-center justify-between px-0.5">
               <span className="truncate text-muted-foreground text-xs">

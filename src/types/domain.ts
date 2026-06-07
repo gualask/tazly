@@ -33,7 +33,10 @@ export interface Category {
 /** Spunto grezzo catturato dal widget: inbox transitorio del progetto, da smaltire in task/note. */
 export interface Promemoria {
   id: PromemoriaId
+  /** Derivazione plain-text: triage (titolo task / note) e fallback clipboard. */
   text: string
+  /** HTML sanitizzato catturato dalla pagina (forma canonica per la copia fedele). */
+  html?: string
   /** Pagina di provenienza (solo contesto: può essere privata/effimera). */
   sourceUrl?: string
   sourceTitle?: string

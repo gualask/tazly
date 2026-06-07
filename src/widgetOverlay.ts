@@ -151,7 +151,8 @@ export function injectCaptureOverlay(widgetUrl: string): void {
     // `innerText` (non `textContent`): rispetta le interruzioni di riga COME RESE a
     // video → elementi su righe diverse (es. due span impilati, o più paragrafi)
     // diventano `\n`, mentre il testo inline sulla stessa riga resta unito.
-    const raw = (e.target as HTMLElement).innerText ?? ''
+    const el = e.target as HTMLElement
+    const raw = el.innerText ?? ''
     const text = raw
       .replace(/[ \t]+/g, ' ') // spazi/tab multipli → uno (gli \n restano)
       .replace(/ *\n */g, '\n') // via gli spazi attorno agli a-capo
@@ -159,11 +160,25 @@ export function injectCaptureOverlay(widgetUrl: string): void {
       .trim()
       .slice(0, 4000)
     if (!text) return
+    // HTML del frammento per la copia FEDELE verso editor rich (Confluence/Docs).
+    // L'overlay non può importare un sanitizer (è iniettato via toString), quindi
+    // qui fa solo operazioni DOM pure: clona il nodo e rende ASSOLUTI gli URL di
+    // link/immagini (l'attributo grezzo è relativo all'origine ospite e si
+    // romperebbe altrove); a-capo e tag li ripulisce/sanitizza poi il widget.
+    const clone = el.cloneNode(true) as HTMLElement
+    for (const a of clone.querySelectorAll('a[href]')) {
+      a.setAttribute('href', (a as HTMLAnchorElement).href)
+    }
+    for (const img of clone.querySelectorAll('img[src]')) {
+      img.setAttribute('src', (img as HTMLImageElement).src)
+    }
+    const html = clone.outerHTML.slice(0, 100000)
     // La provenienza (URL+titolo dell'host) la vede solo l'overlay: l'iframe è
-    // cross-origin. Viaggia col testo per diventare il contesto del promemoria.
+    // cross-origin. Viaggia col contenuto per diventare il contesto del promemoria.
     const msg: CaptureMessage = {
       type: 'tazly:capture',
       text,
+      html,
       sourceUrl: location.href,
       sourceTitle: document.title,
     }
